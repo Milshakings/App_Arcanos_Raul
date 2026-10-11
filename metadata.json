@@ -1,0 +1,6 @@
+{
+  "name": "Arcana AI - Tarot Celestial & Oráculo",
+  "description": "Lecturas místicas de tarot con IA, tiradas especializadas (Cómo fue mi día, Gratitud, Amor/Negocios/Salud, Preguntas), selección manual de cartas y oráculo Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
