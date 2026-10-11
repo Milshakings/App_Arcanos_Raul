@@ -39,26 +39,108 @@
   transform: rotateY(180deg);
 }
 
-/* Custom mystic scrollbar */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(10, 10, 25, 0.6);
+  background: rgba(10, 10, 25, 0.4);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(180, 140, 60, 0.3);
+  background: rgba(180, 140, 60, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.6);
+  background: rgba(212, 175, 55, 0.5);
 }
 
-/* Cosmic background effects */
+/* Safe areas for mobile smartphones / PWA notch and home indicator */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
+}
+
+/* ============================================================== */
+/* MODOS DE COLOR: 
+   1. Cósmico (Default)
+   2. Menos Fuertes / Suave (Soft pastel mate, bajo contraste, descanso visual)
+   3. Cálidos (Warm ámbar terroso, canela, dorado suave, velas)
+/* ============================================================== */
+
+/* 1. MODO CÓSMICO (Original) */
+:root[data-theme="mystic"],
+:root:not([data-theme]) {
+  --bg-primary: #070714;
+  --bg-surface: #0e0d24;
+  --bg-card: #151336;
+  --text-main: #f1f5f9;
+  --accent-gold: #d4af37;
+}
+
+/* 2. MODO MENOS FUERTES (Soft / Relajado / Mate) */
+:root[data-theme="soft"] {
+  --bg-primary: #0f141c;
+  --bg-surface: #171f2a;
+  --bg-card: #1e293b;
+  --text-main: #e2e8f0;
+  --accent-gold: #94a3b8;
+}
+
+:root[data-theme="soft"] body {
+  background-color: #0f141c !important;
+}
+
+:root[data-theme="soft"] .bg-radial-mystic {
+  background: radial-gradient(circle at 50% 20%, rgba(51, 65, 85, 0.25) 0%, rgba(30, 41, 59, 0.4) 45%, rgba(15, 20, 28, 1) 100%) !important;
+}
+
+:root[data-theme="soft"] .gold-glow {
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.15), 0 0 35px rgba(51, 65, 85, 0.1) !important;
+}
+
+:root[data-theme="soft"] .card-gold-border {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  box-shadow: inset 0 0 15px rgba(148, 163, 184, 0.05), 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 3. MODO COLORES CÁLIDOS (Warm / Terracota, Ámbar dorado, Canela, Acogedor) */
+:root[data-theme="warm"] {
+  --bg-primary: #1c120c;
+  --bg-surface: #2b1c14;
+  --bg-card: #382419;
+  --text-main: #fef3c7;
+  --accent-gold: #f59e0b;
+}
+
+:root[data-theme="warm"] body {
+  background-color: #1c120c !important;
+}
+
+:root[data-theme="warm"] .bg-radial-mystic {
+  background: radial-gradient(circle at 50% 20%, rgba(180, 83, 9, 0.25) 0%, rgba(69, 26, 3, 0.45) 45%, rgba(28, 18, 12, 1) 100%) !important;
+}
+
+:root[data-theme="warm"] .gold-glow {
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.25), 0 0 45px rgba(217, 119, 6, 0.18) !important;
+}
+
+:root[data-theme="warm"] .card-gold-border {
+  border-color: rgba(245, 158, 11, 0.38) !important;
+  box-shadow: inset 0 0 15px rgba(245, 158, 11, 0.1), 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Default mystic gradients */
 .bg-radial-mystic {
   background: radial-gradient(circle at 50% 20%, rgba(88, 28, 135, 0.22) 0%, rgba(20, 14, 45, 0.45) 45%, rgba(7, 7, 20, 1) 100%);
 }
@@ -70,4 +152,11 @@
 .card-gold-border {
   border: 1px solid rgba(212, 175, 55, 0.35);
   box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.08), 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Touch responsiveness helper */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
 }

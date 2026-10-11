@@ -213,8 +213,8 @@ export const DeckShuffler: React.FC<DeckShufflerProps> = ({
 
                 <div
                   onClick={() => handleOpenSelectorForIndex(idx)}
-                  className={`cursor-pointer rounded-2xl border-2 border-dashed border-amber-500/30 hover:border-amber-400/70 bg-purple-950/15 hover:bg-purple-950/30 flex flex-col items-center justify-center p-4 text-center transition-all group ${
-                    spread.cardCount > 4 ? 'w-28 h-44' : 'w-48 h-80'
+                  className={`cursor-pointer rounded-2xl border-2 border-dashed border-amber-500/30 hover:border-amber-400/70 bg-purple-950/15 hover:bg-purple-950/30 flex flex-col items-center justify-center p-3 sm:p-4 text-center transition-all group active:scale-95 ${
+                    spread.cardCount > 4 ? 'w-24 h-38 sm:w-28 sm:h-44' : 'w-36 h-60 sm:w-48 sm:h-80'
                   }`}
                 >
                   <div className="w-9 h-9 rounded-full border border-amber-500/30 group-hover:border-amber-400 flex items-center justify-center text-amber-300 group-hover:scale-110 transition-transform mb-2">

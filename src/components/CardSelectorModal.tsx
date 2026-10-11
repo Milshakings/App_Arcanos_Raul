@@ -57,21 +57,21 @@ export const CardSelectorModal: React.FC<CardSelectorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl h-[90vh] rounded-3xl bg-gradient-to-b from-[#141432] via-[#0a0a20] to-[#040410] border border-amber-500/40 p-4 sm:p-6 shadow-2xl flex flex-col justify-between overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in safe-top">
+      <div className="relative w-full max-w-4xl h-[92vh] sm:h-[90vh] rounded-t-3xl sm:rounded-3xl bg-gradient-to-b from-[#141432] via-[#0a0a20] to-[#040410] border-t sm:border border-amber-500/40 p-3.5 sm:p-6 shadow-2xl flex flex-col justify-between overflow-hidden safe-bottom">
         {/* Encabezado */}
-        <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+        <div className="flex items-center justify-between border-b border-amber-500/20 pb-2.5 sm:pb-3">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="font-cinzel text-xs uppercase tracking-widest text-amber-300">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <span className="font-cinzel text-[10px] sm:text-xs uppercase tracking-widest text-amber-300">
                 Introducir Carta Física o Elegir Carta
               </span>
             </div>
-            <h3 className="font-cinzel font-bold text-lg sm:text-xl text-amber-200">
+            <h3 className="font-cinzel font-bold text-base sm:text-xl text-amber-200">
               Posición: {position.name}
             </h3>
-            <p className="text-xs text-slate-400 font-garamond italic">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-garamond italic line-clamp-1">
               {position.meaning}
             </p>
           </div>

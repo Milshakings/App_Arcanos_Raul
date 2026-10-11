@@ -63,9 +63,9 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'w-28 h-44 text-xs',
-    md: 'w-48 h-80 text-sm',
-    lg: 'w-64 h-[26rem] text-base',
+    sm: 'w-24 h-38 sm:w-28 sm:h-44 text-xs',
+    md: 'w-36 h-60 sm:w-48 sm:h-80 text-xs sm:text-sm',
+    lg: 'w-52 h-84 sm:w-64 sm:h-[26rem] text-sm sm:text-base',
   }[size];
 
   const handleCardClick = () => {
