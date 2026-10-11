@@ -11,9 +11,8 @@ import {
   Activity,
   RotateCcw,
   Layers,
-  ArrowRight,
-  PlusCircle,
-  Award,
+  Heart,
+  HelpCircle,
 } from 'lucide-react';
 import { MODULOS_TAROT, TarotSpread } from './data/tarotData';
 import { DeckShuffler, DrawnCardSlot } from './components/DeckShuffler';
@@ -23,29 +22,40 @@ import { DailyProgressTracker, DailyProgressEntry } from './components/DailyProg
 import { KeyInfoModal } from './components/KeyInfoModal';
 import { mysticAudio } from './utils/mysticAudio';
 
-type AppTab = 'altar' | 'avances' | 'grimorio';
-type AltarStep = 'seleccion' | 'introduccion' | 'lectura';
+// Las 4 pestañas de consulta directa + 2 pestañas auxiliares (Avances y Grimorio)
+type AppTab = 'resumen-dia' | 'gratitud' | 'consejos' | 'pregunta' | 'avances' | 'grimorio';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>('altar');
-  const [altarStep, setAltarStep] = useState<AltarStep>('seleccion');
+  const [activeTab, setActiveTab] = useState<AppTab>('resumen-dia');
 
-  // Estado del Módulo Seleccionado
-  const [selectedSpread, setSelectedSpread] = useState<TarotSpread>(MODULOS_TAROT[0]);
-  const [customQuestion, setCustomQuestion] = useState('');
-  const [drawnCards, setDrawnCards] = useState<DrawnCardSlot[]>([]);
+  // Estado independiente de lectura para cada una de las 4 pestañas
+  const [readingsByTab, setReadingsByTab] = useState<{
+    'resumen-dia': { reading: TarotReadingResponse | null; cards: DrawnCardSlot[]; isReadingView: boolean };
+    gratitud: { reading: TarotReadingResponse | null; cards: DrawnCardSlot[]; isReadingView: boolean };
+    consejos: { reading: TarotReadingResponse | null; cards: DrawnCardSlot[]; isReadingView: boolean };
+    pregunta: { reading: TarotReadingResponse | null; cards: DrawnCardSlot[]; isReadingView: boolean };
+  }>({
+    'resumen-dia': { reading: null, cards: [], isReadingView: false },
+    gratitud: { reading: null, cards: [], isReadingView: false },
+    consejos: { reading: null, cards: [], isReadingView: false },
+    pregunta: { reading: null, cards: [], isReadingView: false },
+  });
 
-  // Estado de la Lectura IA
+  const [customQuestions, setCustomQuestions] = useState<{ [key: string]: string }>({
+    'resumen-dia': '¿Qué energías, aprendizajes y acontecimientos marcaron mi día de hoy?',
+    gratitud: '¿Por cuáles 3 bendiciones y enseñanzas sagradas debo dar gracias hoy?',
+    consejos: '¿Qué guía, advertencias y consejos tienen los arcanos para mi Amor, mis Negocios y mi Salud?',
+    pregunta: '',
+  });
+
   const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [activeReading, setActiveReading] = useState<TarotReadingResponse | null>(null);
   const [dailyProgressEntries, setDailyProgressEntries] = useState<DailyProgressEntry[]>([]);
-  const [currentReadingSaved, setCurrentReadingSaved] = useState(false);
 
   // Modales y Sonido
   const [isKeyInfoOpen, setIsKeyInfoOpen] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  // Cargar avances diarios guardados en localStorage
+  // Cargar avances de localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem('arcana_avances_diarios_es');
@@ -71,27 +81,34 @@ export default function App() {
     setIsAudioPlaying(isPlaying);
   };
 
-  const handleStartIntroduction = (spread: TarotSpread) => {
-    setSelectedSpread(spread);
-    if (spread.id !== 'pregunta-libre') {
-      setCustomQuestion(spread.defaultQuestion);
+  // Obtener el spread correspondiente a la pestaña activa
+  const getSpreadForTab = (tab: 'resumen-dia' | 'gratitud' | 'consejos' | 'pregunta'): TarotSpread => {
+    switch (tab) {
+      case 'resumen-dia':
+        return MODULOS_TAROT[0]; // ¿Cómo fue mi día? (3 cartas)
+      case 'gratitud':
+        return MODULOS_TAROT[1]; // 3 cosas para agradecer (3 cartas)
+      case 'consejos':
+        return MODULOS_TAROT[2]; // Consejos en Amor, Negocios y Salud (6 cartas)
+      case 'pregunta':
+        return MODULOS_TAROT[3]; // Pregunta lo que sea (3 cartas)
     }
-    setDrawnCards([]);
-    setActiveReading(null);
-    setCurrentReadingSaved(false);
-    setAltarStep('introduccion');
   };
 
-  const handleGenerateReading = async (slots: DrawnCardSlot[]) => {
+  // Generar lectura para la pestaña activa
+  const handleGenerateReadingForTab = async (
+    tab: 'resumen-dia' | 'gratitud' | 'consejos' | 'pregunta',
+    slots: DrawnCardSlot[]
+  ) => {
+    const spread = getSpreadForTab(tab);
     setIsLoadingAI(true);
-    setDrawnCards(slots);
 
     try {
       const payload = {
-        moduloId: selectedSpread.id,
-        spreadName: selectedSpread.name,
-        spreadDescription: selectedSpread.description,
-        question: customQuestion || selectedSpread.defaultQuestion,
+        moduloId: spread.id,
+        spreadName: spread.name,
+        spreadDescription: spread.description,
+        question: customQuestions[tab] || spread.defaultQuestion,
         cards: slots.map((s) => ({
           id: s.card.id,
           name: s.card.name,
@@ -117,116 +134,136 @@ export default function App() {
       }
 
       const data: TarotReadingResponse = await res.json();
-      setActiveReading(data);
+      data.moduloId = spread.id;
 
-      // Auto-guardar automáticamente el avance diario
+      // Actualizar el estado de esta pestaña
+      setReadingsByTab((prev) => ({
+        ...prev,
+        [tab]: {
+          reading: data,
+          cards: slots,
+          isReadingView: true,
+        },
+      }));
+
+      // Auto-guardar en los avances diarios
       const newEntry: DailyProgressEntry = {
         id: Date.now().toString(),
         dateKey: new Date().toISOString().split('T')[0],
         timestamp: new Date().toISOString(),
-        moduleName: selectedSpread.name,
+        moduleName: spread.name,
         title: data.title,
         summary: data.summary,
         drawnCards: slots,
-        practicalStep: data.actionableWisdom.practicalStep,
+        practicalStep: data.actionableWisdom?.practicalStep || '',
         practicalStepCompleted: false,
-        sacredAffirmation: data.actionableWisdom.sacredAffirmation,
-        reflectionPrompt: data.actionableWisdom.reflectionPrompt,
+        sacredAffirmation: data.actionableWisdom?.sacredAffirmation || '',
+        reflectionPrompt: data.actionableWisdom?.reflectionPrompt || '',
         userNotes: '',
       };
       saveEntriesToStorage([newEntry, ...dailyProgressEntries]);
-      setCurrentReadingSaved(true);
-
-      setAltarStep('lectura');
     } catch (err) {
       console.error('Error al invocar oráculo:', err);
-      const fallbackData: TarotReadingResponse = {
-        title: `La Revelación de los Arcanos: ${selectedSpread.name}`,
-        summary: `Tus cartas han manifestado un mensaje de profunda sincronía. Con ${slots.map((s) => s.card.name).join(', ')}, el oráculo te recuerda que cada vivencia contiene una lección de oro para tu despertar.`,
+      // Fallback rico y extenso
+      const fallbackReading: TarotReadingResponse = {
+        moduloId: spread.id,
+        title: `Resultado Sagrado: ${spread.name}`,
+        summary: `Los arcanos del tarot han manifestado una respuesta certera para tu consulta.\nCada una de las cartas seleccionadas refleja las corrientes profundas que operan en tu interior.\nConfía en la sabiduría del universo y permite que estas revelaciones asienten en tu corazón.`,
         cardInsights: slots.map((s) => ({
           cardId: s.card.id,
           cardName: s.card.name,
           positionName: s.position.name,
           category: s.position.category,
           isReversed: s.isReversed,
-          directMessage: s.isReversed ? s.card.reversedMeaning : s.card.uprightMeaning,
+          directMessage: `${s.card.name} en posición ${s.isReversed ? 'invertida' : 'al derecho'} llega a tu tirada para indicarte que en "${s.position.name}" debes mantener la calma y la perseverancia.\nNo te apresures a juzgar los acontecimientos recientes antes de que revelen su propósito superior.\nPermite que tu discernimiento silencioso guíe tus pasos con seguridad y nobleza.`,
           symbolism: s.card.symbolism,
           energyVibe: s.card.element,
         })),
-        moduloId: selectedSpread.id,
-        lifePillarsReview: {
-          loveSection: {
-            status: 'En el amor, tus vínculos buscan autenticidad y comprensión mutua.',
-            independentAdvice: 'Escucha con empatía y expresa tu verdad desde el afecto sincero.',
-          },
-          businessSection: {
-            status: 'En los negocios, tus proyectos avanzan con paso firme hacia la consolidación.',
-            independentAdvice: 'Cuida los detalles contractuales y mantén la disciplina de ahorro.',
-          },
-          healthSection: {
-            status: 'En la salud, tu nivel de vitalidad pide atención a los tiempos de descanso.',
-            independentAdvice: 'Hidrátate bien, camina al aire libre y suelta la sobrecarga mental.',
-          },
-          harmonySynthesis: 'El balance se logra cuando no sacrificas tu bienestar físico por exigencias externas.',
+        actionableWisdom: {
+          practicalStep: 'Toma unos minutos esta noche para respirar profundo y asimilar las enseñanzas recibidas.',
+          sacredAffirmation: 'Agradezco el camino recorrido y confío en la luz de mi destino.',
+          reflectionPrompt: '¿Qué lección valiosa resuena en mi corazón hoy?',
         },
-        dayReview: {
-          overallVerdict: 'Un día de contrastes donde la perseverancia fue tu mayor aliada.',
-          morningInsight: `La Mañana (${slots[0]?.card.name}): Comenzaste con energía orientada a poner en orden tus prioridades.`,
-          afternoonInsight: `La Tarde (${slots[1]?.card.name}): El punto de inflexión te exigió paciencia y flexibilidad ante los imprevistos.`,
-          eveningInsight: `La Noche (${slots[2]?.card.name}): Cierras la jornada en asimilación; es momento de descansar.`,
-          keyLesson: 'Aceptar los cambios de ritmo sin perder tu centro de paz.',
-          restGuidance: 'Permite que tu mente y cuerpo se regeneren en silencio esta noche.',
-        },
-        gratitudeReview: {
-          gratitudeTheme: 'La gratitud transmuta lo que tenemos en suficiente y multiplica la bendición.',
+        mysticQuote: 'Como es arriba, es abajo; como es adentro, es afuera.',
+      };
+
+      if (spread.id === 'como-fue-mi-dia') {
+        fallbackReading.dayReview = {
+          overallVerdict: 'Un día de aprendizaje profundo donde la perseverancia fue tu mayor aliada ante las exigencias del entorno.',
+          morningInsight: `La Mañana (${slots[0]?.card.name}): Comenzaste tu día enfocado en establecer prioridades claras y definir tus límites con serenidad.`,
+          afternoonInsight: `La Tarde (${slots[1]?.card.name}): El momento central te exigió paciencia y cintura emocional para no reaccionar impulsivamente.`,
+          eveningInsight: `La Noche (${slots[2]?.card.name}): Al caer el sol, tu mente decanta lo vivido; es hora de soltar el control y descansar en paz.`,
+          keyLesson: 'Aceptar que los ritmos externos no deben perturbar tu templo interior de paz.',
+          restGuidance: 'Desconecta tus pantallas temprano y permite que tu cuerpo se regenere en reposo.',
+        };
+      } else if (spread.id === 'agradecimiento-3-cosas') {
+        fallbackReading.gratitudeReview = {
+          gratitudeTheme: 'La gratitud es la llave que transmuta la rutina en abundancia espiritual.',
           blessing1: {
-            title: '1. Bendición Concreta y Tangible',
-            independentAnswer: `Agradece con ${slots[0]?.card.name} el sustento y los momentos de paz recibidos hoy.`,
+            title: '1. Bendición Tangible o Alegría Concreta',
+            independentAnswer: `Agradece con ${slots[0]?.card.name} el sustento, la salud y los pequeños milagros materiales que te acompañaron hoy.`,
             cardName: slots[0]?.card.name || 'Carta 1',
           },
           blessing2: {
-            title: '2. Fortaleza Interior y Aprendizaje',
-            independentAnswer: `Agradece con ${slots[1]?.card.name} tu valentía para afrontar los retos.`,
+            title: '2. Fortaleza Interior y Reto Superado',
+            independentAnswer: `Agradece con ${slots[1]?.card.name} el obstáculo que sorteaste con valentía, pues fortaleció tu carácter.`,
             cardName: slots[1]?.card.name || 'Carta 2',
           },
           blessing3: {
             title: '3. Regalo Espiritual y Sincronía',
-            independentAnswer: `Agradece con ${slots[2]?.card.name} la protección sutil y los milagros cotidianos.`,
+            independentAnswer: `Agradece con ${slots[2]?.card.name} la protección sutil e invisible que cuidó tus pasos en todo momento.`,
             cardName: slots[2]?.card.name || 'Carta 3',
           },
-          gratitudeMantra: 'Doy gracias por todo lo vivido y bendigo mi camino.',
-          gratitudeRitual: 'Coloca tu mano en el corazón y pronuncia gracias tres veces antes de descansar.',
-        },
-        actionableWisdom: {
-          practicalStep: 'Dedica unos minutos esta noche a respirar hondo y soltar las cargas del día.',
-          sacredAffirmation: 'Agradezco el camino recorrido y confío en la luz de mi destino.',
-          reflectionPrompt: '¿Qué lección valiosa me dejó la experiencia vivida hoy?',
-        },
-        mysticQuote: 'Como es arriba, es abajo; como es adentro, es afuera.',
-      };
-      setActiveReading(fallbackData);
+          gratitudeMantra: 'Doy gracias por todo lo vivido y bendigo cada paso de mi destino.',
+          gratitudeRitual: 'Mano en el pecho y tres veces gracias antes de dormir.',
+        };
+      } else if (spread.id === 'amor-negocios-salud') {
+        fallbackReading.lifePillarsReview = {
+          loveSection: {
+            status: `En el Amor (${slots[0]?.card.name}): Tus vínculos buscan honestidad y empatía mutua.`,
+            independentAdvice: `Consejo en el Amor (${slots[1]?.card.name}): Comunica tus sentimientos sin corazas y escucha al otro con paciencia.`,
+          },
+          businessSection: {
+            status: `En los Negocios (${slots[2]?.card.name}): Tus proyectos avanzan con solidez hacia la maduración.`,
+            independentAdvice: `Consejo en Negocios (${slots[3]?.card.name}): Mantén el orden financiero y no te disperses en tareas secundarias.`,
+          },
+          healthSection: {
+            status: `En la Salud (${slots[4]?.card.name}): Tu cuerpo pide equilibrio entre el esfuerzo y el reposo.`,
+            independentAdvice: `Consejo en Salud (${slots[5]?.card.name}): Hidrátate bien, camina al aire libre y dale a tu descanso la prioridad que merece.`,
+          },
+          harmonySynthesis: 'El verdadero éxito integra los tres pilares sin descuidar el bienestar íntimo.',
+        };
+      } else {
+        fallbackReading.questionReview = {
+          directAnswer: 'El oráculo responde que la situación se resolverá favorablemente si actúas con prudencia e integridad.',
+          rootCause: `La raíz con ${slots[0]?.card.name} se originó en la necesidad de clarificar tus verdaderos deseos.`,
+          currentDynamics: `En el presente con ${slots[1]?.card.name}, las fuerzas te piden firmeza moral y serenidad.`,
+          finalGuidance: `El desenlace con ${slots[2]?.card.name} te augura tranquilidad si no dudas de tu intuición.`,
+        };
+      }
 
-      const fallbackEntry: DailyProgressEntry = {
-        id: Date.now().toString(),
-        dateKey: new Date().toISOString().split('T')[0],
-        timestamp: new Date().toISOString(),
-        moduleName: selectedSpread.name,
-        title: fallbackData.title,
-        summary: fallbackData.summary,
-        drawnCards: slots,
-        practicalStep: fallbackData.actionableWisdom.practicalStep,
-        practicalStepCompleted: false,
-        sacredAffirmation: fallbackData.actionableWisdom.sacredAffirmation,
-        reflectionPrompt: fallbackData.actionableWisdom.reflectionPrompt,
-        userNotes: '',
-      };
-      saveEntriesToStorage([fallbackEntry, ...dailyProgressEntries]);
-      setCurrentReadingSaved(true);
-
-      setAltarStep('lectura');
+      setReadingsByTab((prev) => ({
+        ...prev,
+        [tab]: {
+          reading: fallbackReading,
+          cards: slots,
+          isReadingView: true,
+        },
+      }));
     } finally {
       setIsLoadingAI(false);
     }
+  };
+
+  const handleResetTabReading = (tab: 'resumen-dia' | 'gratitud' | 'consejos' | 'pregunta') => {
+    setReadingsByTab((prev) => ({
+      ...prev,
+      [tab]: {
+        reading: null,
+        cards: [],
+        isReadingView: false,
+      },
+    }));
   };
 
   const handleToggleStepCompleted = (id: string) => {
@@ -249,7 +286,17 @@ export default function App() {
   };
 
   const handleReviewProgressEntry = (entry: DailyProgressEntry) => {
-    setActiveReading({
+    // Determinar a qué pestaña pertenece
+    let targetTab: 'resumen-dia' | 'gratitud' | 'consejos' | 'pregunta' = 'resumen-dia';
+    if (entry.moduleName.includes('Agradecer') || entry.moduleName.includes('Gratitud')) {
+      targetTab = 'gratitud';
+    } else if (entry.moduleName.includes('Amor') || entry.moduleName.includes('Consejos')) {
+      targetTab = 'consejos';
+    } else if (entry.moduleName.includes('Pregunta')) {
+      targetTab = 'pregunta';
+    }
+
+    const reconstructedReading: TarotReadingResponse = {
       title: entry.title,
       summary: entry.summary,
       cardInsights: entry.drawnCards.map((c: any) => ({
@@ -267,298 +314,393 @@ export default function App() {
         reflectionPrompt: entry.reflectionPrompt,
       },
       mysticQuote: 'Como es arriba, es abajo; como es adentro, es afuera.',
-    });
-    setDrawnCards(entry.drawnCards);
-    setCustomQuestion(entry.moduleName);
-    setCurrentReadingSaved(true);
-    setActiveTab('altar');
-    setAltarStep('lectura');
-  };
+    };
 
-  const getModuleIcon = (id: string) => {
-    switch (id) {
-      case 'como-fue-mi-dia':
-        return <Sun className="w-5 h-5 text-amber-400" />;
-      case 'agradecimiento-3-cosas':
-        return <Sparkles className="w-5 h-5 text-amber-300" />;
-      case 'amor-negocios-salud':
-        return <Compass className="w-5 h-5 text-purple-400" />;
-      default:
-        return <Layers className="w-5 h-5 text-sky-400" />;
-    }
+    setReadingsByTab((prev) => ({
+      ...prev,
+      [targetTab]: {
+        reading: reconstructedReading,
+        cards: entry.drawnCards,
+        isReadingView: true,
+      },
+    }));
+
+    setActiveTab(targetTab);
   };
 
   return (
     <div className="min-h-screen bg-[#070714] text-slate-100 flex flex-col relative selection:bg-amber-500/30 selection:text-amber-200">
-      {/* Fondo Cósmico y Nebulosa */}
+      {/* Fondo Cósmico */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-purple-900/15 blur-[140px]" />
         <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] rounded-full bg-amber-900/12 blur-[150px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-950/20 blur-[130px]" />
       </div>
 
-      {/* Barra de Navegación Superior */}
-      <header className="relative z-20 border-b border-amber-500/20 bg-[#070718]/90 backdrop-blur-md sticky top-0 px-4 sm:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo / Marca */}
+      {/* Barra de Navegación Superior con las 4 pestañas solicitadas + Avances y Grimorio */}
+      <header className="relative z-20 border-b border-amber-500/20 bg-[#070718]/90 backdrop-blur-md sticky top-0 px-3 sm:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Logo */}
           <div
-            onClick={() => {
-              setActiveTab('altar');
-              setAltarStep('seleccion');
-            }}
-            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setActiveTab('resumen-dia')}
+            className="flex items-center gap-2.5 cursor-pointer group self-start md:self-auto"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500/20 via-purple-500/20 to-amber-300/30 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-[0_0_15px_rgba(212,175,55,0.3)] group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 animate-spin [animation-duration:15s]" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500/20 via-purple-500/20 to-amber-300/30 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-[0_0_15px_rgba(212,175,55,0.3)] group-hover:scale-105 transition-transform">
+              <Sparkles className="w-4 h-4 animate-spin [animation-duration:15s]" />
             </div>
             <div>
-              <h1 className="font-cinzel-decorative font-bold text-lg sm:text-xl text-amber-200 tracking-wider flex items-center gap-2">
+              <h1 className="font-cinzel-decorative font-bold text-base sm:text-lg text-amber-200 tracking-wider">
                 Arcana AI
-                <span className="text-[10px] font-sans font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  Tarot & Oráculo
-                </span>
               </h1>
-              <p className="text-[10px] text-slate-400 font-garamond italic -mt-1 hidden sm:block">
-                Lecturas de 3 Cartas & Avances Diarios Guardados
-              </p>
             </div>
           </div>
 
-          {/* Pestañas Principales */}
-          <nav className="flex items-center gap-1 sm:gap-2">
+          {/* LAS PESTAÑAS DEDICADAS (UNA PARA CADA MÓDULO) */}
+          <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 scrollbar-none">
+            {/* Pestaña 1: Resumen del Día */}
             <button
-              onClick={() => setActiveTab('altar')}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 ${
-                activeTab === 'altar'
-                  ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 shadow-sm'
+              onClick={() => setActiveTab('resumen-dia')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'resumen-dia'
+                  ? 'bg-amber-500/25 text-amber-200 border border-amber-400/50 shadow-[0_0_12px_rgba(212,175,55,0.25)]'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
-              Altar <span className="hidden sm:inline">de Tiradas</span>
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              Resumen del Día
             </button>
 
+            {/* Pestaña 2: Gratitud */}
             <button
-              onClick={() => setActiveTab('avances')}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 ${
-                activeTab === 'avances'
-                  ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 shadow-sm'
+              onClick={() => setActiveTab('gratitud')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'gratitud'
+                  ? 'bg-purple-900/40 text-purple-200 border border-purple-400/50 shadow-[0_0_12px_rgba(168,85,247,0.25)]'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
               }`}
             >
-              <Activity className="w-3.5 h-3.5" />
-              Avances Diarios
+              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+              Gratitud
+            </button>
+
+            {/* Pestaña 3: Consejos (Amor, Negocios, Salud) */}
+            <button
+              onClick={() => setActiveTab('consejos')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'consejos'
+                  ? 'bg-rose-950/40 text-rose-200 border border-rose-400/50 shadow-[0_0_12px_rgba(244,63,94,0.25)]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 text-rose-300" />
+              Consejos
+            </button>
+
+            {/* Pestaña 4: Pregunta al Tarot */}
+            <button
+              onClick={() => setActiveTab('pregunta')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'pregunta'
+                  ? 'bg-sky-950/40 text-sky-200 border border-sky-400/50 shadow-[0_0_12px_rgba(56,189,248,0.25)]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-sky-300" />
+              Pregunta
+            </button>
+
+            <span className="w-[1px] h-4 bg-slate-700 mx-1 shrink-0" />
+
+            {/* Pestaña 5: Avances Diarios */}
+            <button
+              onClick={() => setActiveTab('avances')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'avances'
+                  ? 'bg-emerald-950/40 text-emerald-200 border border-emerald-400/50'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-emerald-300" />
+              Avances
               {dailyProgressEntries.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-amber-500/30 text-amber-300 text-[10px] flex items-center justify-center font-mono">
+                <span className="w-4 h-4 rounded-full bg-emerald-500/30 text-emerald-300 text-[10px] flex items-center justify-center font-mono">
                   {dailyProgressEntries.length}
                 </span>
               )}
             </button>
 
+            {/* Pestaña 6: Grimorio */}
             <button
               onClick={() => setActiveTab('grimorio')}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-cinzel font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'grimorio'
-                  ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 shadow-sm'
+                  ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              Grimorio (78)
+              Grimorio
             </button>
           </nav>
 
-          {/* Controles de Audio y Clave Gemini */}
-          <div className="flex items-center gap-2">
+          {/* Acciones de Audio y Clave */}
+          <div className="flex items-center gap-2 self-end md:self-auto">
             <button
               onClick={handleToggleAudio}
               title={isAudioPlaying ? 'Silenciar sonido 432Hz' : 'Activar sonido armónico 432Hz'}
               className={`p-2 rounded-xl border transition-all ${
                 isAudioPlaying
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_10px_rgba(212,175,55,0.3)]'
-                  : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : 'bg-slate-900/80 text-slate-400 border-slate-800'
               }`}
             >
-              {isAudioPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {isAudioPlaying ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </button>
 
             <button
               onClick={() => setIsKeyInfoOpen(true)}
-              title="Información de la Clave Gemini"
-              className="px-2.5 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-amber-500/30 text-amber-300 text-xs font-cinzel flex items-center gap-1.5 transition-all"
+              className="px-2.5 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-amber-500/30 text-amber-300 text-xs font-cinzel flex items-center gap-1"
             >
-              <Key className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Clave Gemini</span>
+              <Key className="w-3 h-3" />
+              <span className="hidden sm:inline">Clave</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Contenedor Principal */}
-      <main className="relative z-10 flex-1 px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
-        {/* PESTAÑA 1: ALTAR SAGRADO */}
-        {activeTab === 'altar' && (
-          <div>
-            {/* FASE 1: SELECCIÓN DE MÓDULO */}
-            {altarStep === 'seleccion' && (
-              <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-                {/* Banner Hero */}
-                <div className="text-center space-y-3 pt-2 pb-2">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-cinzel tracking-wider uppercase">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Oráculo & Tiradas de Tarot
+      {/* Contenido Principal con Aislamiento Estricto por Pestaña */}
+      <main className="relative z-10 flex-1 px-4 sm:px-8 py-6 max-w-7xl mx-auto w-full">
+        {/* ============================================================== */}
+        {/* PESTAÑA 1: RESUMEN DEL DÍA (¿CÓMO FUE MI DÍA? - 3 CARTAS) */}
+        {/* ============================================================== */}
+        {activeTab === 'resumen-dia' && (
+          <div className="space-y-6">
+            {!readingsByTab['resumen-dia'].isReadingView ? (
+              <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-cinzel">
+                    <Sun className="w-3.5 h-3.5" />
+                    Módulo Exclusivo: Balance del Día (3 Cartas)
                   </div>
-                  <h2 className="font-cinzel-decorative text-3xl sm:text-5xl font-extrabold text-amber-200 tracking-wide drop-shadow-[0_2px_15px_rgba(212,175,55,0.2)]">
-                    Consulta los 4 Módulos Sagrados
+                  <h2 className="font-cinzel-decorative text-2xl sm:text-4xl font-extrabold text-amber-200">
+                    ¿Cómo Fue Mi Día?
                   </h2>
-                  <p className="font-garamond text-base sm:text-lg text-slate-300 italic max-w-2xl mx-auto leading-relaxed">
-                    Introduce tus cartas físicas exactas o baraja para obtener la lectura. Todos tus <strong className="text-amber-300">avances diarios quedan guardados</strong> de forma automática.
+                  <p className="font-garamond text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto">
+                    Introduce o baraja 3 cartas para obtener el balance detallado e independiente de tu Mañana, tu Tarde y tu Noche.
                   </p>
                 </div>
 
-                {/* Grid de los 4 Módulos */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {MODULOS_TAROT.map((mod) => (
-                    <div
-                      key={mod.id}
-                      onClick={() => handleStartIntroduction(mod)}
-                      className="group cursor-pointer p-6 rounded-3xl bg-gradient-to-b from-[#12122c] to-[#0a0a1c] border border-amber-500/25 hover:border-amber-400/70 gold-glow transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between shadow-xl"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 group-hover:bg-amber-500/20 transition-colors">
-                            {getModuleIcon(mod.id)}
-                          </div>
-                          <span className="text-xs font-mono px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold">
-                            {mod.cardCount} {mod.cardCount === 1 ? 'Carta' : 'Cartas'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-cinzel font-bold text-xl text-amber-200 group-hover:text-amber-100 mb-1">
-                          {mod.name}
-                        </h3>
-                        <span className="text-xs text-amber-400/80 font-cinzel block mb-3 font-semibold">
-                          {mod.subtitle}
-                        </span>
-
-                        <p className="text-xs text-slate-300 font-garamond italic leading-relaxed mb-4">
-                          {mod.description}
-                        </p>
-                      </div>
-
-                      <div className="border-t border-amber-500/20 pt-4 flex items-center justify-between">
-                        <div className="flex flex-wrap gap-1.5">
-                          {mod.positions.map((p, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] px-2 py-0.5 rounded bg-black/40 text-slate-300 border border-amber-500/15"
-                            >
-                              {p.name.split(':')[0]}
-                            </span>
-                          ))}
-                        </div>
-
-                        <span className="font-cinzel text-xs text-amber-300 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 shrink-0 ml-2">
-                          Iniciar <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Banner de Avances Guardados */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-amber-950/30 to-purple-950/40 border border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-                  <div className="flex items-center gap-3">
-                    <Award className="w-6 h-6 text-amber-400 shrink-0" />
-                    <div>
-                      <span className="text-xs font-cinzel font-bold text-amber-200 block">
-                        Registro de Avances y Hábitos Diarios
-                      </span>
-                      <p className="text-[11px] text-slate-300 font-garamond italic">
-                        Tus consultas se guardan con fecha, acciones prácticas y reflexiones en la pestaña "Avances Diarios".
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('avances')}
-                    className="px-4 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-cinzel border border-amber-400/40 transition-all shrink-0"
-                  >
-                    Ver Mis Avances
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* FASE 2: INTRODUCIR CARTAS */}
-            {altarStep === 'introduccion' && (
-              <div className="animate-fade-in space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
-                  <button
-                    onClick={() => setAltarStep('seleccion')}
-                    className="text-xs font-cinzel text-slate-400 hover:text-amber-200 flex items-center gap-1.5 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Volver a los 4 Módulos
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <span className="font-cinzel text-sm text-amber-300 font-bold">
-                      {selectedSpread.name}
-                    </span>
-                    <span className="text-xs text-slate-400">({selectedSpread.cardCount} cartas)</span>
-                  </div>
-                </div>
-
-                {/* Campo de Pregunta */}
-                <div className="p-5 rounded-2xl bg-black/40 border border-amber-500/25 max-w-4xl mx-auto space-y-2">
-                  <label className="font-cinzel text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Flame className="w-3.5 h-3.5 text-amber-400" />
-                    {selectedSpread.id === 'pregunta-libre'
-                      ? 'Escribe tu pregunta para el oráculo:'
-                      : 'Intención o enfoque de tu tirada:'}
-                  </label>
-                  <input
-                    type="text"
-                    value={customQuestion}
-                    onChange={(e) => setCustomQuestion(e.target.value)}
-                    placeholder={
-                      selectedSpread.id === 'pregunta-libre'
-                        ? 'ej. ¿Qué debo saber sobre la propuesta que recibí hoy?'
-                        : selectedSpread.defaultQuestion
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-amber-500/20 text-slate-100 text-xs focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
-                  />
-                </div>
-
-                {/* Selector / Introductor de Cartas */}
                 <DeckShuffler
-                  spread={selectedSpread}
-                  question={customQuestion || selectedSpread.defaultQuestion}
-                  onReadingComplete={handleGenerateReading}
+                  spread={getSpreadForTab('resumen-dia')}
+                  question={customQuestions['resumen-dia']}
+                  onReadingComplete={(slots) => handleGenerateReadingForTab('resumen-dia', slots)}
                   isLoadingAI={isLoadingAI}
                 />
               </div>
-            )}
+            ) : (
+              readingsByTab['resumen-dia'].reading && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleResetTabReading('resumen-dia')}
+                    className="text-xs font-cinzel text-slate-400 hover:text-amber-200 flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Realizar Otro Balance del Día
+                  </button>
 
-            {/* FASE 3: LECTURA RESULTANTE Y ORÁCULO DE 3 CARTAS */}
-            {altarStep === 'lectura' && activeReading && (
-              <ReadingResult
-                reading={activeReading}
-                drawnCards={drawnCards}
-                spreadName={selectedSpread.name}
-                question={customQuestion || selectedSpread.defaultQuestion}
-                onNewReading={() => {
-                  setAltarStep('seleccion');
-                  setActiveReading(null);
-                }}
-                onSaveToJournal={() => {}}
-                isSaved={currentReadingSaved}
-              />
+                  <ReadingResult
+                    reading={readingsByTab['resumen-dia'].reading}
+                    drawnCards={readingsByTab['resumen-dia'].cards}
+                    spreadName="¿Cómo fue mi día?"
+                    question={customQuestions['resumen-dia']}
+                    onNewReading={() => handleResetTabReading('resumen-dia')}
+                    onSaveToJournal={() => {}}
+                    isSaved={true}
+                  />
+                </div>
+              )
             )}
           </div>
         )}
 
-        {/* PESTAÑA 2: AVANCES DIARIOS */}
+        {/* ============================================================== */}
+        {/* PESTAÑA 2: GRATITUD (3 COSAS PARA AGRADECER - 3 CARTAS) */}
+        {/* ============================================================== */}
+        {activeTab === 'gratitud' && (
+          <div className="space-y-6">
+            {!readingsByTab['gratitud'].isReadingView ? (
+              <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-300 text-xs font-cinzel">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Módulo Exclusivo: Alquimia de Gratitud (3 Cartas)
+                  </div>
+                  <h2 className="font-cinzel-decorative text-2xl sm:text-4xl font-extrabold text-amber-200">
+                    3 Cosas para Agradecer
+                  </h2>
+                  <p className="font-garamond text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto">
+                    Introduce o extrae 3 cartas para recibir 3 respuestas totalmente independientes de gratitud: Bendición concreta, reto superado y regalo espiritual.
+                  </p>
+                </div>
+
+                <DeckShuffler
+                  spread={getSpreadForTab('gratitud')}
+                  question={customQuestions['gratitud']}
+                  onReadingComplete={(slots) => handleGenerateReadingForTab('gratitud', slots)}
+                  isLoadingAI={isLoadingAI}
+                />
+              </div>
+            ) : (
+              readingsByTab['gratitud'].reading && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleResetTabReading('gratitud')}
+                    className="text-xs font-cinzel text-slate-400 hover:text-purple-300 flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Realizar Otra Consulta de Gratitud
+                  </button>
+
+                  <ReadingResult
+                    reading={readingsByTab['gratitud'].reading}
+                    drawnCards={readingsByTab['gratitud'].cards}
+                    spreadName="3 Cosas para Agradecer"
+                    question={customQuestions['gratitud']}
+                    onNewReading={() => handleResetTabReading('gratitud')}
+                    onSaveToJournal={() => {}}
+                    isSaved={true}
+                  />
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* PESTAÑA 3: CONSEJOS (AMOR, NEGOCIOS Y SALUD - 6 CARTAS) */}
+        {/* ============================================================== */}
+        {activeTab === 'consejos' && (
+          <div className="space-y-6">
+            {!readingsByTab['consejos'].isReadingView ? (
+              <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs font-cinzel">
+                    <Compass className="w-3.5 h-3.5" />
+                    Módulo Exclusivo: Consejos en Amor, Negocios y Salud (6 Cartas)
+                  </div>
+                  <h2 className="font-cinzel-decorative text-2xl sm:text-4xl font-extrabold text-amber-200">
+                    Consejos en Amor, Negocios y Salud
+                  </h2>
+                  <p className="font-garamond text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto">
+                    Introduce 2 cartas para Amor, 2 cartas para Negocios y 2 cartas para Salud para obtener 3 respuestas exhaustivas e independientes.
+                  </p>
+                </div>
+
+                <DeckShuffler
+                  spread={getSpreadForTab('consejos')}
+                  question={customQuestions['consejos']}
+                  onReadingComplete={(slots) => handleGenerateReadingForTab('consejos', slots)}
+                  isLoadingAI={isLoadingAI}
+                />
+              </div>
+            ) : (
+              readingsByTab['consejos'].reading && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleResetTabReading('consejos')}
+                    className="text-xs font-cinzel text-slate-400 hover:text-rose-300 flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Realizar Otra Consulta de Consejos
+                  </button>
+
+                  <ReadingResult
+                    reading={readingsByTab['consejos'].reading}
+                    drawnCards={readingsByTab['consejos'].cards}
+                    spreadName="Consejos en Amor, Negocios y Salud"
+                    question={customQuestions['consejos']}
+                    onNewReading={() => handleResetTabReading('consejos')}
+                    onSaveToJournal={() => {}}
+                    isSaved={true}
+                  />
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* PESTAÑA 4: PREGUNTA AL TAROT (CONSULTA LIBRE - 3 CARTAS) */}
+        {/* ============================================================== */}
+        {activeTab === 'pregunta' && (
+          <div className="space-y-6">
+            {!readingsByTab['pregunta'].isReadingView ? (
+              <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-300 text-xs font-cinzel">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    Módulo Exclusivo: Pregunta lo que sea al Tarot (3 Cartas)
+                  </div>
+                  <h2 className="font-cinzel-decorative text-2xl sm:text-4xl font-extrabold text-amber-200">
+                    Pregunta al Tarot
+                  </h2>
+                  <p className="font-garamond text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto">
+                    Formula cualquier pregunta concreta. El oráculo analizará la Raíz, el Presente y el Desenlace con un detalle extenso.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-black/50 border border-sky-500/25 max-w-2xl mx-auto space-y-1.5">
+                  <label className="font-cinzel text-xs font-bold text-sky-300 flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    Tu Pregunta para el Tarot:
+                  </label>
+                  <input
+                    type="text"
+                    value={customQuestions['pregunta']}
+                    onChange={(e) =>
+                      setCustomQuestions((prev) => ({ ...prev, pregunta: e.target.value }))
+                    }
+                    placeholder="Escribe aquí tu duda (ej. ¿Debo aceptar este nuevo camino laboral?)..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-sky-500/20 text-slate-100 text-xs focus:outline-none focus:border-sky-400 placeholder:text-slate-600"
+                  />
+                </div>
+
+                <DeckShuffler
+                  spread={getSpreadForTab('pregunta')}
+                  question={customQuestions['pregunta']}
+                  onReadingComplete={(slots) => handleGenerateReadingForTab('pregunta', slots)}
+                  isLoadingAI={isLoadingAI}
+                />
+              </div>
+            ) : (
+              readingsByTab['pregunta'].reading && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleResetTabReading('pregunta')}
+                    className="text-xs font-cinzel text-slate-400 hover:text-sky-300 flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Hacer Otra Pregunta al Tarot
+                  </button>
+
+                  <ReadingResult
+                    reading={readingsByTab['pregunta'].reading}
+                    drawnCards={readingsByTab['pregunta'].cards}
+                    spreadName="Pregunta al Tarot"
+                    question={customQuestions['pregunta']}
+                    onNewReading={() => handleResetTabReading('pregunta')}
+                    onSaveToJournal={() => {}}
+                    isSaved={true}
+                  />
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* PESTAÑA 5: AVANCES DIARIOS */}
+        {/* ============================================================== */}
         {activeTab === 'avances' && (
           <DailyProgressTracker
             entries={dailyProgressEntries}
@@ -569,7 +711,9 @@ export default function App() {
           />
         )}
 
-        {/* PESTAÑA 3: GRIMORIO DE CARTAS */}
+        {/* ============================================================== */}
+        {/* PESTAÑA 6: GRIMORIO DE CARTAS */}
+        {/* ============================================================== */}
         {activeTab === 'grimorio' && <CardGrimoire />}
       </main>
 
@@ -582,15 +726,15 @@ export default function App() {
       />
 
       {/* Pie de Página */}
-      <footer className="relative z-10 border-t border-amber-500/15 py-6 px-4 text-center text-xs text-slate-500 font-garamond bg-[#060610]">
+      <footer className="relative z-10 border-t border-amber-500/15 py-5 px-4 text-center text-xs text-slate-500 font-garamond bg-[#060610]">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-slate-400">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span className="font-cinzel text-amber-200/80">Arcana AI</span>
-            <span>• Desarrollado en Google AI Studio</span>
+            <span>• Pestañas Independientes & Detalle Extenso</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Oráculo Gemini (<code className="text-amber-300">gemini-3.8-flash</code>) • Tiradas de 3 Cartas & Avances Guardados
+            Oráculo Gemini (<code className="text-amber-300">gemini-3.8-flash</code>)
           </div>
         </div>
       </footer>

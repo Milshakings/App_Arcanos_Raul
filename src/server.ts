@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -36,7 +36,7 @@ app.get('/api/status', (_req: Request, res: Response) => {
   });
 });
 
-// Tarot Reading Endpoint en Español con Respuestas Independientes por Módulo
+// Tarot Reading Endpoint con estricto aislamiento y detalle extenso (mínimo 4 líneas por sección)
 app.post('/api/tarot/reading', async (req: Request, res: Response) => {
   try {
     const { moduloId, spreadName, spreadDescription, question, cards } = req.body;
@@ -58,82 +58,97 @@ app.post('/api/tarot/reading', async (req: Request, res: Response) => {
 
     let moduloInstructions = '';
     if (moduloId === 'como-fue-mi-dia') {
-      moduloInstructions = `MÓDULO: ¿CÓMO FUE MI DÍA? (3 CARTAS)
-Este módulo debe dar un resultado completo e independiente sobre cómo estuvo el día:
-- overallVerdict: Un balance general y veredicto claro y poético de cómo se sintió la jornada completa.
-- morningInsight: Una respuesta totalmente independiente y detallada sobre la MAÑANA (la energía al despertar, intenciones o primer impulso).
-- afternoonInsight: Una respuesta totalmente independiente y detallada sobre la TARDE (el reto, roce, tarea central o punto de inflexión).
-- eveningInsight: Una respuesta totalmente independiente y detallada sobre la NOCHE (el cierre, cómo decanta la jornada y la sabiduría asimilada).
-- keyLesson: La enseñanza de oro que le dejó este día.
-- restGuidance: Consejo sagrado para soltar la mente y descansar en paz esta noche.`;
+      moduloInstructions = `MÓDULO EXCLUSIVO: ¿CÓMO FUE MI DÍA? (3 CARTAS)
+REGLA ESTRICTA DE AISLAMIENTO: Responde ÚNICAMENTE sobre el balance del día. PROHIBIDO incluir consejos de amor, negocios, finanzas o salud general que pertenezcan a otros módulos.
+
+REGLA DE EXTENSIÓN: Cada sección DEBE tener AL MENOS 4 LÍNEAS COMPLETAS de prosa profunda, detallada y reflexiva (mínimo 70 palabras por sección). Prohibidas las respuestas breves.
+
+Estructura obligatoria para dayReview:
+- overallVerdict: Un balance general y veredicto poético de la jornada completa (al menos 4 líneas).
+- morningInsight: Análisis profundo e independiente de LA MAÑANA (Carta 1: ${cards[0]?.name}), detallando con qué energía despertó, las intenciones iniciales, el tono psicológico y las primeras corrientes del día (al menos 4 líneas).
+- afternoonInsight: Análisis profundo e independiente de LA TARDE (Carta 2: ${cards[1]?.name}), detallando el desafío vivido, los roces o tareas complejas, y cómo influyó en su ánimo (al menos 4 líneas).
+- eveningInsight: Análisis profundo e independiente de LA NOCHE (Carta 3: ${cards[2]?.name}), detallando cómo decanta el día, qué emociones quedan al reposar y cómo asimilar lo vivido (al menos 4 líneas).
+- keyLesson: La gran enseñanza de sabiduría que le regaló este día (al menos 4 líneas).
+- restGuidance: Pauta sagrada para desconectar la mente, soltar el control y tener un descanso reparador esta noche (al menos 4 líneas).`;
     } else if (moduloId === 'agradecimiento-3-cosas') {
-      moduloInstructions = `MÓDULO: 3 COSAS PARA AGRADECER / GRATITUD (3 CARTAS)
-El consultante quiere una respuesta independiente para cada una de las 3 cosas que debe agradecer hoy, y un resultado sagrado de gratitud:
-- gratitudeTheme: Síntesis inspiradora de por qué agradecer hoy eleva su vibración.
-- blessing1: Objeto con { title: "Primera Bendición Concreta", independentAnswer: "Explicación profunda de este regalo o momento de luz recibido", cardName: nombre de la carta 1 }.
-- blessing2: Objeto con { title: "Segunda Bendición: Fortaleza o Reto Superado", independentAnswer: "Explicación profunda del aprendizaje o resiliencia ganada", cardName: nombre de la carta 2 }.
-- blessing3: Objeto con { title: "Tercera Bendición: Regalo Espiritual o Sincronía", independentAnswer: "Explicación profunda de la protección sutil o milagro cotidiano", cardName: nombre de la carta 3 }.
-- gratitudeMantra: Un decreto o mantra sagrado de agradecimiento.
-- gratitudeRitual: Un gesto simple para honrar la gratitud hoy.`;
+      moduloInstructions = `MÓDULO EXCLUSIVO: 3 COSAS PARA AGRADECER / GRATITUD (3 CARTAS)
+REGLA ESTRICTA DE AISLAMIENTO: Responde ÚNICAMENTE sobre gratitud y agradecimiento. PROHIBIDO incluir consejos de amor, trabajo o salud que pertenezcan a otros módulos.
+
+REGLA DE EXTENSIÓN: Cada una de las 3 respuestas de gratitud DEBE tener AL MENOS 4 LÍNEAS COMPLETAS de análisis enriquecedor y conmovedor (mínimo 70 palabras cada una).
+
+Estructura obligatoria para gratitudeReview:
+- gratitudeTheme: Reflexión introductoria sobre el poder transmutador de la gratitud hoy (al menos 4 líneas).
+- blessing1: Objeto con { title: "1. Bendición Tangible o Alegría Concreta", independentAnswer: "Análisis extenso (mínimo 4 líneas) explicando exactamente qué regalo palpable, provisión, salud o momento de paz debe agradecer hoy con ${cards[0]?.name}", cardName: "${cards[0]?.name}" }.
+- blessing2: Objeto con { title: "2. Fortaleza Interior y Reto Superado", independentAnswer: "Análisis extenso (mínimo 4 líneas) explicando qué desafío, prueba o resiliencia interna debe agradecer con ${cards[1]?.name} y cómo lo fortaleció", cardName: "${cards[1]?.name}" }.
+- blessing3: Objeto con { title: "3. Regalo Espiritual y Sincronía Oculta", independentAnswer: "Análisis extenso (mínimo 4 líneas) explicando qué protección sutil, guía invisible o milagro cotidiano debe agradecer hoy con ${cards[2]?.name}", cardName: "${cards[2]?.name}" }.
+- gratitudeMantra: Un decreto sagrado de agradecimiento para repetir.
+- gratitudeRitual: Un gesto o práctica terrenal para anclar la gratitud hoy.`;
     } else if (moduloId === 'amor-negocios-salud') {
-      moduloInstructions = `MÓDULO: CONSEJOS EN AMOR, NEGOCIOS Y SALUD (6 CARTAS EN TOTAL, 2 POR CADA ÁREA)
-Cada una de las tres áreas debe tener su PROPIA RESPUESTA TOTALMENTE INDEPENDIENTE:
-- loveSection: Objeto con { status: "Diagnóstico actual del corazón y relaciones", independentAdvice: "Consejo sagrado específico e independiente para el amor" } basado en cartas 1 y 2.
-- businessSection: Objeto con { status: "Diagnóstico actual de finanzas y trabajo", independentAdvice: "Consejo estratégico específico e independiente para negocios" } basado en cartas 3 y 4.
-- healthSection: Objeto con { status: "Diagnóstico de vitalidad y descanso", independentAdvice: "Consejo específico e independiente para la salud y bienestar" } basado en cartas 5 y 6.
-- harmonySynthesis: Cómo equilibrar armoniosamente estas 3 áreas de vida.`;
+      moduloInstructions = `MÓDULO EXCLUSIVO: CONSEJOS EN AMOR, NEGOCIOS Y SALUD (6 CARTAS)
+REGLA ESTRICTA DE AISLAMIENTO: Responde ÚNICAMENTE sobre estos tres pilares de vida. PROHIBIDO mezclar con resúmenes del día o listas de gratitud.
+
+REGLA DE EXTENSIÓN: Cada pilar debe contener un diagnóstico de al menos 4 líneas y un consejo independiente de al menos 4 líneas completas.
+
+Estructura obligatoria para lifePillarsReview:
+- loveSection: Objeto con { status: "Diagnóstico profundo del corazón y vínculos con ${cards[0]?.name} (al menos 4 líneas)", independentAdvice: "Consejo sagrado específico e independiente para el amor con ${cards[1]?.name} (al menos 4 líneas)" }.
+- businessSection: Objeto con { status: "Diagnóstico profundo del panorama laboral y material con ${cards[2]?.name} (al menos 4 líneas)", independentAdvice: "Consejo estratégico concreto e independiente para el éxito profesional con ${cards[3]?.name} (al menos 4 líneas)" }.
+- healthSection: Objeto con { status: "Diagnóstico de la energía corporal, estrés y descanso con ${cards[4]?.name} (al menos 4 líneas)", independentAdvice: "Consejo de autocuidado, equilibrio y nutrición vital con ${cards[5]?.name} (al menos 4 líneas)" }.
+- harmonySynthesis: Síntesis de cómo integrar equilibradamente estos tres aspectos (al menos 4 líneas).`;
     } else {
-      moduloInstructions = `MÓDULO: PREGUNTA LO QUE SEA / CONSULTA LIBRE (3 CARTAS)
-Pregunta formulada: "${question ? question.trim() : 'Orientación general'}"
-Debe ofrecer una respuesta independiente y certera a la pregunta:
-- directAnswer: Respuesta clara y contundente a la pregunta.
-- rootCause: La raíz o causa profunda que originó la situación.
-- currentDynamics: La fuerza activa presente ahora mismo.
-- finalGuidance: El desenlace y recomendación definitiva.`;
+      moduloInstructions = `MÓDULO EXCLUSIVO: PREGUNTA AL TAROT (3 CARTAS)
+Pregunta formulada por el consultante: "${question ? question.trim() : 'Orientación para mi destino'}".
+REGLA DE EXTENSIÓN: Cada sección debe tener AL MENOS 4 LÍNEAS COMPLETAS respondiendo con precisión a la inquietud.
+
+Estructura obligatoria para questionReview:
+- directAnswer: Respuesta rotunda, clara y profunda a su pregunta (al menos 4 líneas).
+- rootCause: La raíz oculta o motivo que originó esta situación con ${cards[0]?.name} (al menos 4 líneas).
+- currentDynamics: Las fuerzas activas en juego en el presente con ${cards[1]?.name} (al menos 4 líneas).
+- finalGuidance: El desenlace pronosticado y el consejo sagrado con ${cards[2]?.name} (al menos 4 líneas).`;
     }
 
-    const prompt = `Eres un sabio y empático Maestro de Tarot y Guía Espiritual en español.
-
-El consultante requiere que cada módulo ofrezca un resultado independiente y adaptado exactamente a su naturaleza.
+    const prompt = `Eres un sabio Maestro de Tarot, Psicólogo de Arquetipos y Guía Espiritual en español.
 
 ${moduloInstructions}
 
-Cartas Introducidas en la Tirada:
+Cartas de la Tirada:
 ${cardsDescription}
 
-Pregunta o Intención: "${question ? question.trim() : 'Consulta al oráculo'}"
+REQUISITOS CRÍTICOS:
+1. AISLAMIENTO TOTAL: No mezcles campos de otros módulos. Solo incluye los campos correspondientes a "${moduloId}".
+2. EXTENSIÓN Y DETALLE: Cada interpretación de carta en 'cardInsights' ('directMessage') y cada sección del módulo DEBE tener AL MENOS 4 LÍNEAS de contenido sustancial, revelador y poético. Nada de respuestas cortas.
+3. Devuelve estrictamente JSON válido en español.
 
-Devuelve un JSON estrictamente estructurado en español con:
+Esquema JSON:
 - moduloId: "${moduloId}"
-- title: Título evocador y poético
-- summary: Síntesis oracular global
-- cardInsights: Arreglo de cada carta con { cardId, cardName, positionName, isReversed, directMessage, symbolism, energyVibe }
-- dayReview: (Solo si moduloId === 'como-fue-mi-dia') { overallVerdict, morningInsight, afternoonInsight, eveningInsight, keyLesson, restGuidance }
-- gratitudeReview: (Solo si moduloId === 'agradecimiento-3-cosas') { gratitudeTheme, blessing1: { title, independentAnswer, cardName }, blessing2: { title, independentAnswer, cardName }, blessing3: { title, independentAnswer, cardName }, gratitudeMantra, gratitudeRitual }
-- lifePillarsReview: (Solo si moduloId === 'amor-negocios-salud') { loveSection: { status, independentAdvice }, businessSection: { status, independentAdvice }, healthSection: { status, independentAdvice }, harmonySynthesis }
-- questionReview: (Solo si moduloId === 'pregunta-libre') { directAnswer, rootCause, currentDynamics, finalGuidance }
-- actionableWisdom: { practicalStep, sacredAffirmation, reflectionPrompt }
-- mysticQuote: Aforismo místico en español`;
+- title: Título evocador
+- summary: Síntesis introductoria de 2 párrafos sustanciales (al menos 4 líneas cada uno)
+- cardInsights: Arreglo con cada carta { cardId, cardName, positionName, isReversed, directMessage (mínimo 4 líneas completas), symbolism (mínimo 3 líneas), energyVibe }
+${moduloId === 'como-fue-mi-dia' ? '- dayReview: { overallVerdict, morningInsight, afternoonInsight, eveningInsight, keyLesson, restGuidance }' : ''}
+${moduloId === 'agradecimiento-3-cosas' ? '- gratitudeReview: { gratitudeTheme, blessing1: { title, independentAnswer, cardName }, blessing2: { title, independentAnswer, cardName }, blessing3: { title, independentAnswer, cardName }, gratitudeMantra, gratitudeRitual }' : ''}
+${moduloId === 'amor-negocios-salud' ? '- lifePillarsReview: { loveSection: { status, independentAdvice }, businessSection: { status, independentAdvice }, healthSection: { status, independentAdvice }, harmonySynthesis }' : ''}
+${moduloId === 'pregunta-libre' ? '- questionReview: { directAnswer, rootCause, currentDynamics, finalGuidance }' : ''}
+- actionableWisdom: { practicalStep (mínimo 3 líneas), sacredAffirmation, reflectionPrompt }
+- mysticQuote: Aforismo esotérico`;
 
     if (!process.env.GEMINI_API_KEY) {
-      // Fallback enriquecido según el módulo
+      // Fallback extenso en español respetando el aislamiento estricto
       const fallbackResponse: any = {
         moduloId,
         title: `Lectura Sagrada: ${spreadName}`,
-        summary: `Las cartas han respondido a tu consulta revelando las fuerzas que operan en tu esfera. Con ${cards.map((c: any) => c.name).join(', ')}, confía en tu intuición y en la sincronía del momento.`,
+        summary: `Los arcanos sagrados han revelado un tapiz de profundas sincronicidades para tu consulta actual.\nCada una de las cartas que has introducido actúa como un espejo límpido de tu estado consciente e inconsciente, permitiéndote contemplar la verdad sin velos ni ataduras.\nConfía en que los ciclos del cosmos se mueven a favor de tu evolución íntima.`,
         cardInsights: cards.map((c: any) => ({
           cardId: c.id,
           cardName: c.name,
-          positionName: c.positionName || 'Posición',
+          positionName: c.positionName || 'Posición Sagrada',
           isReversed: Boolean(c.isReversed),
-          directMessage: `${c.name} en posición ${c.isReversed ? 'invertida' : 'al derecho'} te indica que en "${c.positionName}" debes mantener la serenidad y confiar en tu discernimiento.`,
-          symbolism: `${c.name} representa la sabiduría arquetípica de la transformación.`,
-          energyVibe: c.suit || 'Mayor',
+          directMessage: `${c.name} en su manifestación ${c.isReversed ? 'invertida' : 'al derecho'} llega a esta posición para recordarte que las apariencias no definen tu valor interior.\nEn el plano de "${c.positionName}", se te pide actuar con paciencia diamantina y no apresurar decisiones que requieran maduración natural.\nPermite que tu intuición decante las verdaderas intenciones detrás de cada acontecimiento reciente.\nEl mensaje central es mantenerte firme en tus valores sin ceder ante la presión de los ritmos externos.`,
+          symbolism: `${c.name} encarna el misterio arquetípico de la transmutación espiritual, enseñándonos que todo final es el umbral de una iniciación superior.`,
+          energyVibe: c.suit || 'Arcano Mayor',
         })),
         actionableWisdom: {
-          practicalStep: 'Dedica 5 minutos a la respiración consciente y conecta con tu paz interior.',
-          sacredAffirmation: 'Agradezco cada experiencia y avanzo con confianza.',
-          reflectionPrompt: '¿Qué aprendizaje esencial resuena en mi corazón hoy?',
+          practicalStep: 'Dedica 10 minutos de recogimiento esta noche, enciende una vela o respira con calma profunda para asimilar lo que hoy comprendiste.',
+          sacredAffirmation: 'Estoy en paz con el ritmo perfecto del universo y confío en mi luz interior.',
+          reflectionPrompt: '¿Qué verdad interior está lista para ser reconocida con amor y sin miedo?',
         },
         mysticQuote: 'Como es arriba, es abajo; como es adentro, es afuera.',
         isDemoReading: true,
@@ -141,56 +156,56 @@ Devuelve un JSON estrictamente estructurado en español con:
 
       if (moduloId === 'como-fue-mi-dia') {
         fallbackResponse.dayReview = {
-          overallVerdict: 'Un día de contrastes donde la perseverancia fue tu mayor aliada.',
-          morningInsight: `La Mañana (${cards[0]?.name}): Comenzaste con energía orientada a poner en orden tus prioridades.`,
-          afternoonInsight: `La Tarde (${cards[1]?.name}): El punto de inflexión te exigió paciencia y flexibilidad ante los imprevistos.`,
-          eveningInsight: `La Noche (${cards[2]?.name}): Cierras la jornada en asimilación; es momento de soltar la exigencia y descansar.`,
-          keyLesson: 'Aceptar los cambios de ritmo sin perder tu centro de paz.',
-          restGuidance: 'Apaga las pantallas temprano y permite que tu cuerpo se regenere en silencio.',
+          overallVerdict: 'Tu jornada estuvo marcada por una profunda alquimia entre la exigencia de tus responsabilidades y la necesidad de proteger tu paz mental.\nA pesar de los altibajos inevitables del entorno, lograste sostener tu eje con dignidad y resiliencia.\nEl saldo del día es de crecimiento personal y maduración de tu paciencia.',
+          morningInsight: `La Mañana comenzó bajo la influencia de ${cards[0]?.name}.\nAl despertar, tu mente se vio convocada a establecer prioridades claras y definir con qué actitud enfrentarías las demandas tempranas.\nHubo momentos de indecisión o impulso que te exigieron respirar hondo para no desgastar tu energía antes de tiempo.\nFue un amanecer que te invitó a sembrar una intención de orden y serenidad.`,
+          afternoonInsight: `La Tarde estuvo regida por el arquetipo de ${cards[1]?.name}.\nDurante las horas centrales se presentó el desafío más evidente de la jornada: una situación imprevista, una conversación densa o una tarea que puso a prueba tu paciencia.\nEn lugar de reaccionar impulsivamente, tuviste la oportunidad de observar tus propios límites y elegir una respuesta ecuánime.\nEse instante fue el verdadero catalizador de aprendizaje de todo tu día.`,
+          eveningInsight: `La Noche decanta ahora con la sabiduría de ${cards[2]?.name}.\nAl caer el sol, las tensiones acumuladas comienzan a perder fuerza para dejar espacio a la contemplación honesta de lo vivido.\nEs el momento sagrado en que tu alma integra lo que aprendió y comprende por qué ocurrieron ciertos eventos.\nSe te invita a soltar cualquier reclamo hacia ti mismo y entregarte al reposo con la certeza del deber cumplido.`,
+          keyLesson: 'El gran aprendizaje de hoy es que no puedes controlar todas las olas del mar, pero sí puedes aprender a navegar con serenidad sobre ellas sin perder tu brújula interior.',
+          restGuidance: 'Desconecta tus dispositivos electrónicos, toma un vaso de agua tibia y repite tres veces mentalmente: "Suelto este día y descanso en bendición". Tu cuerpo merece regenerarse en calma.',
         };
       } else if (moduloId === 'agradecimiento-3-cosas') {
         fallbackResponse.gratitudeReview = {
-          gratitudeTheme: 'La gratitud transmuta lo que tenemos en suficiente y multiplica la abundancia.',
+          gratitudeTheme: 'La gratitud no es simplemente un acto de cortesía, sino la llave maestra que desbloquea la abundancia cósmica.\nAl agradecer lo pequeño y lo grande, transformas el peso de la rutina en oro espiritual y abres las compuertas para recibir bendiciones mayores.',
           blessing1: {
-            title: '1. Bendición Concreta y Tangible',
-            independentAnswer: `Agradece con ${cards[0]?.name} el sustento, la salud y los pequeños momentos de tranquilidad recibidos hoy.`,
+            title: '1. Bendición Tangible o Alegría Recibida',
+            independentAnswer: `Bajo la luz de ${cards[0]?.name}, hoy debes agradecer el milagro palpable de tu sustento, tu salud corporal y el techo que te resguarda.\nHubo un detalle cotidiano —un momento de calma, un alimento reparador o una palabra amable— que pasó inadvertido pero que sostuvo tu bienestar.\nReconocer este beneficio material arraiga tu energía en la seguridad de que el universo no te desampara.\nAgradece con corazón abierto la provisión visible que te acompaña día a día.`,
             cardName: cards[0]?.name || 'Carta 1',
           },
           blessing2: {
-            title: '2. Fortaleza Interior y Aprendizaje',
-            independentAnswer: `Agradece con ${cards[1]?.name} tu capacidad de sobreponerte a los retos con valentía y madurez.`,
+            title: '2. Fortaleza Interior y Reto Superado',
+            independentAnswer: `A través del arquetipo de ${cards[1]?.name}, debes dar gracias por el desafío que te puso a prueba y no logró derribarte.\nAquello que en su momento te causó incomodidad o zozobra fue en realidad el gimnasio donde se fortaleció tu carácter.\nHoy comprobaste una vez más que posees una reserva inagotable de coraje y temple sereno para superar adversidades.\nDa gracias por las heridas que se volvieron cicatrices de sabiduría y madurez.`,
             cardName: cards[1]?.name || 'Carta 2',
           },
           blessing3: {
-            title: '3. Regalo Espiritual y Sincronía',
-            independentAnswer: `Agradece con ${cards[2]?.name} la guía invisible y la paz que te acompañan incluso en momentos de incertidumbre.`,
+            title: '3. Regalo Espiritual y Sincronía Oculta',
+            independentAnswer: `Con la presencia sagrada de ${cards[2]?.name}, agradece las protecciones invisibles y las sincronicidades que guiaron tus pasos sin que te dieras cuenta.\nUn presentimiento oportuno, una coincidencia que te evitó un disgusto o una sensación repentina de paz fueron regalos directos de la gracia universal.\nAgradecer lo invisible afina tu sexto sentido y te recuerda que nunca caminas solo en este sendero terrenal.\nHora de dar gracias por la chispa divina que habita en tu corazón y te orienta en la penumbra.`,
             cardName: cards[2]?.name || 'Carta 3',
           },
-          gratitudeMantra: 'Doy gracias por todo lo que es, todo lo que fue y todo lo que está por llegar.',
-          gratitudeRitual: 'Coloca tu mano en el corazón y pronuncia tres veces gracias antes de dormir.',
+          gratitudeMantra: 'Doy gracias por lo que tengo, bendigo lo que fue y abro mis brazos con júbilo a la provisión divina que llega a mi vida.',
+          gratitudeRitual: 'Coloca tu mano derecha en el centro de tu pecho, respira profundo y di en voz baja tres veces la palabra "Gracias" sintiendo cómo se expande tu pecho.',
         };
       } else if (moduloId === 'amor-negocios-salud') {
         fallbackResponse.lifePillarsReview = {
           loveSection: {
-            status: `En el amor (${cards[0]?.name}), tus vínculos buscan autenticidad y comprensión mutua.`,
-            independentAdvice: `Consejo independiente (${cards[1]?.name}): Escucha con empatía y expresa tu verdad desde el afecto sincero.`,
+            status: `Diagnóstico en el Amor (${cards[0]?.name}):\nTus relaciones atraviesan un periodo donde la honestidad emocional es indispensable.\nPuede existir cierta distancia o miedo a mostrar tu vulnerabilidad completa ante quienes amas, creando una coraza innecesaria.\nSin embargo, el deseo de conexión sincera sigue vivo en lo profundo de tu pecho y busca una oportunidad para manifestarse con verdad.`,
+            independentAdvice: `Consejo en el Amor (${cards[1]?.name}):\nEl oráculo te recomienda derribar los muros del orgullo y comunicarte desde la empatía pura.\nNo esperes a que la otra persona adivine tus necesidades; exprésalas con dulzura pero con total transparencia.\nSi estás en búsqueda de amor, comienza por enamorarte de tu propia vida y tu integridad para atraer a quien vibre en tu misma sintonía.`,
           },
           businessSection: {
-            status: `En los negocios (${cards[2]?.name}), tus proyectos avanzan con paso firme hacia la consolidación.`,
-            independentAdvice: `Consejo independiente (${cards[3]?.name}): Cuida los detalles contractuales y mantén la disciplina de ahorro.`,
+            status: `Diagnóstico en Negocios y Trabajo (${cards[2]?.name}):\nTu ámbito profesional se encuentra en una etapa de consolidación que demanda estrategia y disciplina.\nHay oportunidades valiosas sobre la mesa, pero también distracciones que amenazan con dispersar tu tiempo y tus recursos.\nEs vital revisar presupuestos, contratos y acuerdos con ojo meticuloso para evitar malentendidos futuros.`,
+            independentAdvice: `Consejo en Negocios y Trabajo (${cards[3]?.name}):\nEnfoca tu fuego en terminar lo que ya empezaste antes de abrir frentes innecesarios.\nLa perseverancia silenciosa te otorgará mejores frutos que las acciones ostentosas o los riesgos desmedidos.\nSé prudente con tus gastos y asóciate únicamente con personas que demuestren ética intachable y respeto mutuo.`,
           },
           healthSection: {
-            status: `En la salud (${cards[4]?.name}), tu nivel de vitalidad pide atención a los tiempos de descanso.`,
-            independentAdvice: `Consejo independiente (${cards[5]?.name}): Hidrátate bien, camina al aire libre y suelta la sobrecarga mental.`,
+            status: `Diagnóstico en Salud y Vitalidad (${cards[4]?.name}):\nTu templo físico te está enviando señales claras sobre la necesidad de equilibrar el esfuerzo con el descanso.\nEl exceso de actividad mental y la preocupación acumulada suelen manifestarse en tensiones en el cuello, espalda o dificultades para conciliar un sueño profundo.\nTu cuerpo necesita que bajes el volumen de las exigencias cotidianas.`,
+            independentAdvice: `Consejo en Salud y Vitalidad (${cards[5]?.name}):\nPrioriza el agua fresca, camina descalzo sobre la hierba o toma paseos al aire libre para descargar la energía estática.\nEstablece un horario riguroso para irte a la cama y evita llevar problemas laborales a tu almohada.\nTrata a tu cuerpo como el santuario sagrado que hospeda tu alma; cuídalo con devoción diaria.`,
           },
-          harmonySynthesis: 'El balance se logra cuando no sacrificas tu bienestar físico por exigencias externas.',
+          harmonySynthesis: 'El secreto del equilibrio radica en comprender que ningún éxito profesional compensa la pérdida de la paz en el hogar o la quiebra de tu salud. Atiende los tres pilares como las tres patas firmes de una mesa sagrada.',
         };
       } else {
         fallbackResponse.questionReview = {
-          directAnswer: `El oráculo te responde que la situación tiene una resolución positiva si actúas con prudencia.`,
-          rootCause: `La raíz con ${cards[0]?.name} se originó en una búsqueda de mayor claridad y verdad.`,
-          currentDynamics: `En el presente con ${cards[1]?.name}, las fuerzas te piden firmeza y serenidad.`,
-          finalGuidance: `El desenlace con ${cards[2]?.name} te aconseja confiar en tu instinto y dar el paso con determinación.`,
+          directAnswer: `Frente a tu consulta, el oráculo responde con claridad que el desenlace será favorable si estás dispuesto a asumir las responsabilidades que conlleva la verdad.\nNo temas a los cambios que se avecinan, pues están diseñados para desmantelar lo que ya no te sirve y dar lugar a una etapa de mayor autenticidad.\nLa respuesta es un sí condicionado a que actúes con integridad intachable.`,
+          rootCause: `La Raíz del Asunto (${cards[0]?.name}):\nEsta situación no surgió de la nada; tiene su origen en una búsqueda profunda de libertad y sentido que vienes postergando.\nViejos patrones de complacencia o miedo a la confrontación crearon el caldo de cultivo para que este dilema se manifestara en tu presente.\nEs momento de reconocer esa causa fundacional para sanarla de raíz.`,
+          currentDynamics: `Las Fuerzas del Presente (${cards[1]?.name}):\nAhora mismo te encuentras ante una bifurcación de caminos donde la mente y el corazón parecen tirar en direcciones opuestas.\nHay influencias del entorno que intentan opinar sobre lo que deberías hacer, pero ninguna de ellas cargará con las consecuencias de tu decisión.\nLa fuerza activa en juego te exige discernimiento sereno y valentía moral.`,
+          finalGuidance: `El Desenlace y Consejo Sagrado (${cards[2]?.name}):\nEl camino hacia adelante se despejará en cuanto des el primer paso firme sin mirar atrás con nostalgia estéril.\nConfía en tu propia capacidad para navegar lo desconocido; tienes todas las herramientas para salir victorioso de este ciclo.\nEl oráculo te asegura que la paz que buscas llegará de la mano de tu propia determinación.`,
         };
       }
 
@@ -202,7 +217,7 @@ Devuelve un JSON estrictamente estructurado en español con:
       contents: prompt,
       config: {
         systemInstruction:
-          'Eres un sabio Maestro de Tarot en español. Cuando el consultante elija ¿Cómo fue mi día?, das un balance del día completo e independiente para mañana, tarde y noche. Cuando elija Gratitud, das respuestas independientes y detalladas para cada una de las 3 cosas a agradecer. Cuando elija Amor, Negocios y Salud, das respuestas independientes y exhaustivas para cada pilar. Devuelve exclusivamente JSON válido.',
+          'Eres un sabio y respetado Maestro de Tarot en español. Cumples con la regla de aislamiento estricto (no mezclas módulos jamás) y con la regla de extensión (cada sección y carta debe tener un detalle profundo de AL MENOS 4 LÍNEAS COMPLETAS). Devuelves siempre JSON válido.',
         responseMimeType: 'application/json',
       },
     });
@@ -241,10 +256,10 @@ app.post('/api/tarot/clarify', async (req: Request, res: Response) => {
 
     if (!process.env.GEMINI_API_KEY) {
       return res.json({
-        answer: `El oráculo contempla tu inquietud: "${userQuery}". ${
+        answer: `El oráculo contempla tu inquietud con profundo detenimiento: "${userQuery}".\n${
           hasOracleCards
-            ? `A través de las 3 cartas sagradas del oráculo (${oracleCards.map((c: any) => c.name).join(', ')}), se te revela que la paciencia y la coherencia serán tus mejores aliadas. Confía en tu corazón.`
-            : 'Recuerda que las cartas señalan una dirección, pero tu voluntad consciente es quien forja el destino.'
+            ? `A través de las 3 cartas sagradas del oráculo que has presentado (${oracleCards.map((c: any) => c.name).join(', ')}), se te revela con claridad que la clave radica en no apresurar conclusiones prematuras.\nLa primera carta (${oracleCards[0]?.name}) ilumina la raíz de tu duda recordándote que la calma es tu mayor fortaleza.\nLa segunda carta (${oracleCards[1]?.name}) advierte contra la dispersión de esfuerzos, mientras que la tercera (${oracleCards[2]?.name}) te entrega la bendición de un desenlace sereno si mantienes tu fe inquebrantable.`
+            : 'Las cartas señalan una dirección certera, pero recuerda que es tu voluntad consciente la que moldea el destino.'
         }`,
       });
     }
@@ -259,7 +274,7 @@ Pregunta / Inquietud del Consultante para el Oráculo: "${userQuery}"
 Las 3 Cartas que el Consultante Utilizó para el Oráculo:
 ${oracleCardsText}
 
-Por favor, responde con profunda sabiduría, calidez y precisión en español:
+Por favor, responde con profunda sabiduría, calidez y detalle extenso en español (al menos 4 líneas por cada una de las 3 cartas):
 1. Explica directamente cómo responde cada una de las 3 cartas a su inquietud (Carta 1: La raíz o luz, Carta 2: El obstáculo o advertencia, Carta 3: El consejo directo y desenlace).
 2. Concluye con un mensaje empoderador y claro para que el consultante sepa exactamente qué paso dar.`;
 
@@ -268,7 +283,7 @@ Por favor, responde con profunda sabiduría, calidez y precisión en español:
       contents: prompt,
       config: {
         systemInstruction:
-          'Eres un Oráculo del Tarot empático, certero y poético que responde siempre en español analizando detalladamente las 3 cartas del oráculo que el consultante introdujo.',
+          'Eres un Oráculo del Tarot empático, certero y poético que responde siempre en español analizando detalladamente las 3 cartas del oráculo que el consultante introdujo, con un detalle profundo de al menos 4 líneas por respuesta.',
       },
     });
 
@@ -306,6 +321,10 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Error al iniciar el servidor:', err);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    console.error('Error al iniciar el servidor:', err);
+  });
+}
+
+export default app;
