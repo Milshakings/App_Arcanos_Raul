@@ -141,7 +141,7 @@ Aforismo: "${reading.mysticQuote}"`;
       {/* ============================================================== */}
       {/* 1. ENCABEZADO Y SÍNTESIS DE LA LECTURA */}
       {/* ============================================================== */}
-      <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-purple-950/40 via-[#0a0a20]/80 to-[#050512] border border-amber-500/30 gold-glow backdrop-blur-md overflow-hidden">
+      <div className="relative p-6 sm:p-8 rounded-3xl theme-card-surface border gold-glow backdrop-blur-md overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">

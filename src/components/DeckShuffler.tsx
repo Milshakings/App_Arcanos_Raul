@@ -110,7 +110,7 @@ export const DeckShuffler: React.FC<DeckShufflerProps> = ({
   return (
     <div className="w-full flex flex-col items-center">
       {/* Barra Superior de Control */}
-      <div className="w-full max-w-5xl flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-purple-950/25 border border-amber-500/25 backdrop-blur-md mb-6">
+      <div className="w-full max-w-5xl flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl theme-card-surface border backdrop-blur-md mb-6">
         <div>
           <div className="flex items-center gap-2">
             <span className="font-cinzel text-amber-300 font-bold text-base sm:text-lg">
@@ -170,7 +170,7 @@ export const DeckShuffler: React.FC<DeckShufflerProps> = ({
 
       {/* Cuadrícula de Posiciones de la Tirada */}
       <div className="w-full max-w-5xl mb-8">
-        <div className="flex flex-wrap justify-center gap-5 sm:gap-6 min-h-[360px] items-start p-4 sm:p-6 rounded-2xl bg-black/35 border border-amber-500/20 backdrop-blur-sm">
+        <div className="flex flex-wrap justify-center gap-5 sm:gap-6 min-h-[360px] items-start p-4 sm:p-6 rounded-2xl theme-card-surface border backdrop-blur-sm">
           {spread.positions.map((pos, idx) => {
             const slot = slots[idx];
 

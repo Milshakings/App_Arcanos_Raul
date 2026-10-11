@@ -329,17 +329,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070714] text-slate-100 flex flex-col relative selection:bg-amber-500/30 selection:text-amber-200">
-      {/* Fondo Cósmico */}
+    <div className="min-h-screen theme-app-bg text-slate-100 flex flex-col relative selection:bg-amber-500/30 selection:text-amber-200">
+      {/* Fondo y Orbes reactivos al tema de color */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-purple-900/15 blur-[140px]" />
-        <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] rounded-full bg-amber-900/12 blur-[150px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-950/20 blur-[130px]" />
+        <div className="absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full theme-orb-1 blur-[140px]" />
+        <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] rounded-full theme-orb-2 blur-[150px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full theme-orb-3 blur-[130px]" />
       </div>
 
-      {/* Barra de Navegación Superior con las 4 pestañas solicitadas + Avances y Grimorio */}
       {/* Barra de Navegación Superior: Mobile-First con Selector de Temas, Audio, Clave e Instalador PWA */}
-      <header className="relative z-20 border-b border-amber-500/20 bg-[#070718]/90 backdrop-blur-md sticky top-0 px-3 sm:px-6 py-2.5 sm:py-3 safe-top">
+      <header className="relative z-20 border-b theme-header backdrop-blur-md sticky top-0 px-3 sm:px-6 py-2.5 sm:py-3 safe-top">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3">
           {/* Fila superior en móvil: Logo + Acciones rápidas (Tema, Audio, PWA) */}
           <div className="w-full md:w-auto flex items-center justify-between gap-2">
@@ -732,7 +731,7 @@ export default function App() {
       />
 
       {/* Pie de Página */}
-      <footer className="relative z-10 border-t border-amber-500/15 py-5 px-4 mb-16 md:mb-0 text-center text-xs text-slate-500 font-garamond bg-[#060610]">
+      <footer className="relative z-10 border-t theme-footer py-5 px-4 mb-16 md:mb-0 text-center text-xs text-slate-500 font-garamond">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-slate-400">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
