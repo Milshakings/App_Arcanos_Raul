@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#1e103c"/>
+      <stop offset="60%" stop-color="#0e0a24"/>
+      <stop offset="100%" stop-color="#060512"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#fbbf24"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Sacred Border -->
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-opacity="0.4"/>
+  <rect x="36" y="36" width="440" height="440" rx="70" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="6,6" stroke-opacity="0.6"/>
+
+  <!-- Celestial Rings -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-opacity="0.75"/>
+  <circle cx="256" cy="256" r="145" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="4,8" stroke-opacity="0.5"/>
+
+  <!-- Four Directional Diamonds -->
+  <polygon points="256,60 262,75 256,90 250,75" fill="url(#goldGrad)"/>
+  <polygon points="256,422 262,437 256,452 250,437" fill="url(#goldGrad)"/>
+  <polygon points="60,256 75,262 90,256 75,250" fill="url(#goldGrad)"/>
+  <polygon points="422,256 437,262 452,256 437,250" fill="url(#goldGrad)"/>
+
+  <!-- Radiant Eight-Pointed Star in Background -->
+  <g filter="url(#goldGlow)" opacity="0.9">
+    <!-- Star rays -->
+    <path d="M 256 120 L 268 230 L 378 218 L 285 275 L 340 370 L 256 305 L 172 370 L 227 275 L 134 218 L 244 230 Z" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- Central Mystical Tarot Emblem: Crescent Moon and Radiant Sun -->
+  <!-- Crescent Moon -->
+  <path d="M 220 160 A 105 105 0 1 0 330 330 A 120 120 0 1 1 220 160 Z" fill="url(#goldGrad)" filter="url(#goldGlow)"/>
+
+  <!-- Central Eye / Star of Divinity -->
+  <circle cx="256" cy="256" r="18" fill="url(#goldGrad)"/>
+  <circle cx="256" cy="256" r="6" fill="#070714"/>
+
+  <!-- Mystic Sparkles -->
+  <polygon points="340,170 344,182 356,186 344,190 340,202 336,190 324,186 336,182" fill="url(#goldGrad)"/>
+  <polygon points="170,320 173,330 183,333 173,336 170,346 167,336 157,333 167,330" fill="url(#goldGrad)"/>
+  <polygon points="330,340 333,348 341,351 333,354 330,362 327,354 319,351 327,348" fill="url(#goldGrad)"/>
+
+  <!-- Constellation Accent Dots -->
+  <circle cx="200" cy="180" r="3" fill="#fef08a" opacity="0.8"/>
+  <circle cx="310" cy="150" r="2.5" fill="#fef08a" opacity="0.8"/>
+  <circle cx="370" cy="290" r="3" fill="#fef08a" opacity="0.8"/>
+  <circle cx="150" cy="230" r="2.5" fill="#fef08a" opacity="0.8"/>
+</svg>

@@ -102,7 +102,7 @@ export const MODULOS_TAROT: TarotSpread[] = [
       },
       {
         index: 1,
-        name: 'Amor: Consejo del Oráculo',
+        name: 'Amor: Consejo del Tarot',
         category: 'Amor',
         meaning: 'La actitud o acción sagrada recomendada para armonizar tus vínculos amorosos.',
       },
@@ -138,7 +138,7 @@ export const MODULOS_TAROT: TarotSpread[] = [
     subtitle: 'Respuesta certera a cualquier dilema o curiosidad (3 cartas)',
     cardCount: 3,
     iconName: 'HelpCircle',
-    description: 'Haz cualquier pregunta abierta sobre tu destino, decisiones, una persona o camino. El oráculo responderá con precisión.',
+    description: 'Haz cualquier pregunta abierta sobre tu destino, decisiones, una persona o camino. El tarot responderá con precisión.',
     defaultQuestion: '',
     positions: [
       {

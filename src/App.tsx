@@ -20,6 +20,7 @@ import { ReadingResult, TarotReadingResponse } from './components/ReadingResult'
 import { CardGrimoire } from './components/CardGrimoire';
 import { DailyProgressTracker, DailyProgressEntry } from './components/DailyProgressTracker';
 import { KeyInfoModal } from './components/KeyInfoModal';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { mysticAudio } from './utils/mysticAudio';
 
 // Las 4 pestañas de consulta directa + 2 pestañas auxiliares (Avances y Grimorio)
@@ -163,7 +164,7 @@ export default function App() {
       };
       saveEntriesToStorage([newEntry, ...dailyProgressEntries]);
     } catch (err) {
-      console.error('Error al invocar oráculo:', err);
+      console.error('Error al solicitar lectura de tarot:', err);
       // Fallback rico y extenso
       const fallbackReading: TarotReadingResponse = {
         moduloId: spread.id,
@@ -235,7 +236,7 @@ export default function App() {
         };
       } else {
         fallbackReading.questionReview = {
-          directAnswer: 'El oráculo responde que la situación se resolverá favorablemente si actúas con prudencia e integridad.',
+          directAnswer: 'El tarot revela que la situación se resolverá favorablemente si actúas con prudencia e integridad.',
           rootCause: `La raíz con ${slots[0]?.card.name} se originó en la necesidad de clarificar tus verdaderos deseos.`,
           currentDynamics: `En el presente con ${slots[1]?.card.name}, las fuerzas te piden firmeza moral y serenidad.`,
           finalGuidance: `El desenlace con ${slots[2]?.card.name} te augura tranquilidad si no dudas de tu intuición.`,
@@ -443,8 +444,10 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Acciones de Audio y Clave */}
+          {/* Acciones de Audio, Clave y PWA */}
           <div className="flex items-center gap-2 self-end md:self-auto">
+            <PWAInstallButton />
+
             <button
               onClick={handleToggleAudio}
               title={isAudioPlaying ? 'Silenciar sonido 432Hz' : 'Activar sonido armónico 432Hz'}
@@ -645,7 +648,7 @@ export default function App() {
                     Pregunta al Tarot
                   </h2>
                   <p className="font-garamond text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto">
-                    Formula cualquier pregunta concreta. El oráculo analizará la Raíz, el Presente y el Desenlace con un detalle extenso.
+                    Formula cualquier pregunta concreta. Los arcanos analizarán la Raíz, el Presente y el Desenlace con un detalle extenso.
                   </p>
                 </div>
 
@@ -734,7 +737,7 @@ export default function App() {
             <span>• Pestañas Independientes & Detalle Extenso</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Oráculo Gemini (<code className="text-amber-300">gemini-3.8-flash</code>)
+            Tarot Asistido por Gemini (<code className="text-amber-300">gemini-3.8-flash</code>)
           </div>
         </div>
       </footer>

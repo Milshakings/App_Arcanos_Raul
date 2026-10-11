@@ -47,7 +47,7 @@ export const KeyInfoModal: React.FC<KeyInfoModalProps> = ({
           </div>
           <div>
             <h3 className="font-cinzel text-lg font-bold text-amber-200">
-              Clave de API Gemini & Oráculo
+              Clave de API Gemini & Tarot
             </h3>
             <p className="text-[11px] text-slate-400 font-garamond italic">
               Configuración y estado del motor de IA

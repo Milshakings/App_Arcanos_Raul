@@ -233,11 +233,11 @@ export const DeckShuffler: React.FC<DeckShufflerProps> = ({
         </div>
       </div>
 
-      {/* Botón de Consulta al Oráculo Gemini cuando todas las cartas estén listas */}
+      {/* Botón para obtener la lectura cuando todas las cartas estén listas */}
       {isReady && (
         <div className="mb-8 flex flex-col items-center text-center animate-fade-in">
           <p className="text-xs text-amber-200/90 font-garamond italic mb-3">
-            Tus cartas han sido configuradas exactamente como indicaste. Consulta al Oráculo Gemini para obtener tu lectura.
+            Tus cartas han sido dispuestas exactamente como elegiste. Solicita la revelación del tarot para obtener tu lectura detallada.
           </p>
           <button
             onClick={() => onReadingComplete(slots as DrawnCardSlot[])}
@@ -245,7 +245,7 @@ export const DeckShuffler: React.FC<DeckShufflerProps> = ({
             className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-purple-600 to-amber-500 bg-[length:200%_auto] hover:bg-right font-cinzel font-bold text-sm tracking-wider uppercase text-amber-50 shadow-[0_0_30px_rgba(212,175,55,0.4)] border border-amber-300/50 transition-all duration-500 transform hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-2.5"
           >
             <Sparkles className="w-5 h-5 text-amber-200 animate-spin [animation-duration:10s]" />
-            {isLoadingAI ? 'Canalizando Interpretación...' : 'Consultar al Oráculo Gemini'}
+            {isLoadingAI ? 'Interpretando Arcanos...' : 'Obtener Lectura del Tarot'}
           </button>
         </div>
       )}

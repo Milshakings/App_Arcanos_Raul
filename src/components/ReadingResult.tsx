@@ -9,23 +9,15 @@ import {
   Heart,
   Briefcase,
   Activity,
-  Send,
   HelpCircle,
   RotateCcw,
   BookOpen,
-  Shuffle,
-  PlusCircle,
-  RefreshCw,
   Sun,
   Moon,
   CloudSun,
-  Award,
 } from 'lucide-react';
 import { TarotCardView } from './TarotCardView';
 import { DrawnCardSlot } from './DeckShuffler';
-import { CardSelectorModal } from './CardSelectorModal';
-import { TODAS_LAS_CARTAS, TarotCard, SpreadPosition } from '../data/tarotData';
-import { mysticAudio } from '../utils/mysticAudio';
 
 export interface TarotReadingResponse {
   moduloId?: string;
@@ -92,18 +84,6 @@ interface ReadingResultProps {
   isSaved?: boolean;
 }
 
-const ORACLE_3_POSITIONS: SpreadPosition[] = [
-  { index: 0, name: '1. La Revelación', meaning: 'El origen, raíz o luz sobre tu duda' },
-  { index: 1, name: '2. La Advertencia', meaning: 'El obstáculo sutil, punto ciego o sombra a vigilar' },
-  { index: 2, name: '3. El Consejo y Desenlace', meaning: 'La respuesta directa y paso sagrado a tomar' },
-];
-
-export interface OracleCardSlot {
-  card: TarotCard;
-  isReversed: boolean;
-  position: SpreadPosition;
-}
-
 export const ReadingResult: React.FC<ReadingResultProps> = ({
   reading,
   drawnCards,
@@ -117,22 +97,13 @@ export const ReadingResult: React.FC<ReadingResultProps> = ({
   const [affirmationCopied, setAffirmationCopied] = useState(false);
   const [userNote, setUserNote] = useState('');
 
-  // Estado del Oráculo con 3 Cartas
-  const [clarifyQuery, setClarifyQuery] = useState('');
-  const [oracleCards, setOracleCards] = useState<(OracleCardSlot | null)[]>([null, null, null]);
-  const [selectorTargetIndex, setSelectorTargetIndex] = useState<number | null>(null);
-  const [isClarifying, setIsClarifying] = useState(false);
-  const [oracleReplies, setOracleReplies] = useState<
-    Array<{ q: string; a: string; cards: OracleCardSlot[] }>
-  >([]);
-
   const copyFullReading = () => {
     const text = `✨ ARCANA AI TAROT - LECTURA SAGRADA ✨
 Título: ${reading.title}
 Tirada: ${spreadName}
 ${question ? `Consulta: ${question}\n` : ''}
 
---- SÍNTESIS DEL ORÁCULO ---
+--- SÍNTESIS DEL TAROT ---
 ${reading.summary}
 
 --- CARTAS DE LA TIRADA ---
@@ -162,88 +133,6 @@ Aforismo: "${reading.mysticQuote}"`;
       navigator.clipboard.writeText(reading.actionableWisdom.sacredAffirmation);
       setAffirmationCopied(true);
       setTimeout(() => setAffirmationCopied(false), 2000);
-    }
-  };
-
-  const handleAssignOracleCard = (card: TarotCard, isReversed: boolean) => {
-    if (selectorTargetIndex === null) return;
-    setOracleCards((prev) => {
-      const next = [...prev];
-      next[selectorTargetIndex] = {
-        card,
-        isReversed,
-        position: ORACLE_3_POSITIONS[selectorTargetIndex],
-      };
-      return next;
-    });
-    setSelectorTargetIndex(null);
-  };
-
-  const handleQuickDealOracle = () => {
-    mysticAudio.playShuffleSound();
-    const shuffled = [...TODAS_LAS_CARTAS].sort(() => Math.random() - 0.5);
-    setOracleCards([
-      { card: shuffled[0], isReversed: Math.random() < 0.25, position: ORACLE_3_POSITIONS[0] },
-      { card: shuffled[1], isReversed: Math.random() < 0.25, position: ORACLE_3_POSITIONS[1] },
-      { card: shuffled[2], isReversed: Math.random() < 0.25, position: ORACLE_3_POSITIONS[2] },
-    ]);
-  };
-
-  const toggleReverseOracleCard = (idx: number) => {
-    setOracleCards((prev) =>
-      prev.map((c, i) => (i === idx && c ? { ...c, isReversed: !c.isReversed } : c))
-    );
-  };
-
-  const handleAskClarification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clarifyQuery.trim() || isClarifying) return;
-
-    const query = clarifyQuery.trim();
-    setIsClarifying(true);
-    const activeOracleCards = oracleCards.filter((c): c is OracleCardSlot => c !== null);
-
-    try {
-      const res = await fetch('/api/tarot/clarify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question,
-          readingSummary: reading.summary,
-          userQuery: query,
-          cards: drawnCards.map((c) => ({
-            name: c.card.name,
-            position: c.position.name,
-            isReversed: c.isReversed,
-          })),
-          oracleCards: activeOracleCards.map((c) => ({
-            name: c.card.name,
-            isReversed: c.isReversed,
-            role: c.position.name,
-          })),
-        }),
-      });
-      const data = await res.json();
-      setOracleReplies((prev) => [
-        ...prev,
-        {
-          q: query,
-          a: data.answer || 'Confía en tu sabiduría interior.',
-          cards: activeOracleCards,
-        },
-      ]);
-      setClarifyQuery('');
-    } catch {
-      setOracleReplies((prev) => [
-        ...prev,
-        {
-          q: query,
-          a: 'El velo permanece en silencio. Mira dentro de tu corazón para hallar la verdad.',
-          cards: activeOracleCards,
-        },
-      ]);
-    } finally {
-      setIsClarifying(false);
     }
   };
 
@@ -318,7 +207,7 @@ Aforismo: "${reading.mysticQuote}"`;
 
         <div className="border-t border-amber-500/20 pt-4">
           <h3 className="text-xs uppercase font-cinzel tracking-wider text-amber-400/90 font-bold mb-2">
-            Síntesis y Mensaje del Oráculo
+            Síntesis y Mensaje del Tarot
           </h3>
           <p className="text-slate-200 text-base font-garamond leading-relaxed whitespace-pre-line text-justify">
             {reading.summary}
@@ -622,13 +511,13 @@ Aforismo: "${reading.mysticQuote}"`;
           <div className="flex items-center gap-2 mb-1">
             <HelpCircle className="w-5 h-5 text-sky-400" />
             <h2 className="font-cinzel text-xl font-bold text-sky-200">
-              Respuesta Directa del Oráculo a tu Pregunta
+              Respuesta Directa del Tarot a tu Pregunta
             </h2>
           </div>
 
           <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30">
             <span className="text-[10px] font-cinzel text-sky-300 font-bold uppercase tracking-wider block mb-1">
-              Veredicto del Oráculo
+              Veredicto del Tarot
             </span>
             <p className="text-sm font-cinzel font-bold text-sky-100">
               {reading.questionReview.directAnswer}
@@ -791,164 +680,6 @@ Aforismo: "${reading.mysticQuote}"`;
           "{reading.mysticQuote}"
         </p>
       </div>
-
-      {/* ============================================================== */}
-      {/* 5. CONSULTA AL ORÁCULO CON 3 CARTAS DE TAROT */}
-      {/* ============================================================== */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#141434] via-[#0d0d26] to-[#070716] border border-amber-400/35 gold-glow space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="font-cinzel text-base sm:text-lg font-bold text-amber-200">
-                Consulta al Oráculo con 3 Cartas
-              </h3>
-            </div>
-            <p className="text-xs text-slate-300 font-garamond italic">
-              Introduce o extrae 3 cartas específicas para profundizar o resolver cualquier inquietud con el Oráculo Gemini.
-            </p>
-          </div>
-
-          <button
-            onClick={handleQuickDealOracle}
-            className="px-3.5 py-1.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/60 border border-amber-500/30 text-amber-200 text-xs font-cinzel flex items-center gap-1.5 transition-all self-end sm:self-auto"
-          >
-            <Shuffle className="w-3.5 h-3.5 text-amber-300" />
-            Tirada Rápida de 3 Cartas
-          </button>
-        </div>
-
-        {/* Las 3 Ranuras de Cartas del Oráculo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {ORACLE_3_POSITIONS.map((pos, idx) => {
-            const slot = oracleCards[idx];
-
-            if (slot) {
-              return (
-                <div
-                  key={pos.index}
-                  className="p-3.5 rounded-2xl bg-black/40 border border-amber-500/25 flex flex-col items-center justify-between"
-                >
-                  <TarotCardView
-                    card={slot.card}
-                    isReversed={slot.isReversed}
-                    isFlipped={true}
-                    positionLabel={pos.name}
-                    positionMeaning={pos.meaning}
-                    size="sm"
-                    interactive={false}
-                  />
-
-                  <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                    <button
-                      onClick={() => toggleReverseOracleCard(idx)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-black/60 hover:bg-purple-950/80 text-amber-300/80 border border-amber-500/30 font-cinzel flex items-center gap-1"
-                    >
-                      <RefreshCw className="w-2.5 h-2.5" />
-                      {slot.isReversed ? 'Invertida' : 'Al derecho'}
-                    </button>
-                    <button
-                      onClick={() => setSelectorTargetIndex(idx)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-black/60 hover:bg-amber-950/80 text-amber-300/90 border border-amber-500/30 font-cinzel"
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={pos.index}
-                onClick={() => setSelectorTargetIndex(idx)}
-                className="cursor-pointer p-4 rounded-2xl border-2 border-dashed border-amber-500/30 hover:border-amber-400/70 bg-purple-950/15 hover:bg-purple-950/30 flex flex-col items-center justify-center text-center transition-all min-h-[220px]"
-              >
-                <span className="text-[11px] font-cinzel font-bold text-amber-300/90 uppercase tracking-wider block mb-1">
-                  {pos.name}
-                </span>
-                <span className="text-[10px] text-slate-400 font-garamond italic mb-3">
-                  {pos.meaning}
-                </span>
-                <div className="w-9 h-9 rounded-full border border-amber-500/30 flex items-center justify-center text-amber-300 mb-2">
-                  <PlusCircle className="w-5 h-5 text-amber-400" />
-                </div>
-                <span className="text-xs font-cinzel font-semibold text-amber-200">
-                  Introducir Carta {idx + 1}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Historial de Respuestas del Oráculo con sus 3 cartas */}
-        {oracleReplies.length > 0 && (
-          <div className="space-y-4 pt-2">
-            {oracleReplies.map((reply, i) => (
-              <div key={i} className="p-5 rounded-2xl bg-black/60 border border-amber-500/25 space-y-3">
-                <span className="text-xs font-cinzel font-bold text-amber-300 flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4 text-amber-400" />
-                  Pregunta al Oráculo: "{reply.q}"
-                </span>
-
-                {reply.cards.length > 0 && (
-                  <div className="flex flex-wrap gap-2 text-[11px] font-cinzel text-slate-300">
-                    <span className="text-amber-400/80">3 Cartas del Oráculo:</span>
-                    {reply.cards.map((c, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-0.5 rounded bg-purple-950/40 border border-amber-500/20 text-amber-200"
-                      >
-                        {c.card.name} ({c.isReversed ? 'Invertida' : 'Al derecho'})
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <p className="text-xs text-slate-200 font-garamond whitespace-pre-line leading-relaxed border-t border-amber-500/15 pt-2">
-                  {reply.a}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Formulario de Pregunta al Oráculo */}
-        <form onSubmit={handleAskClarification} className="space-y-3 pt-2">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              value={clarifyQuery}
-              onChange={(e) => setClarifyQuery(e.target.value)}
-              placeholder="Escribe tu duda para que el Oráculo la responda con estas 3 cartas..."
-              className="flex-1 px-4 py-3 rounded-xl bg-black/60 border border-amber-500/25 text-slate-100 text-xs focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
-            />
-            <button
-              type="submit"
-              disabled={!clarifyQuery.trim() || isClarifying}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-amber-50 text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 transition-all"
-            >
-              {isClarifying ? (
-                <Sparkles className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {isClarifying ? 'Canalizando...' : 'Consultar con las 3 Cartas'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Selector Modal para las 3 cartas del oráculo */}
-      {selectorTargetIndex !== null && (
-        <CardSelectorModal
-          isOpen={true}
-          onClose={() => setSelectorTargetIndex(null)}
-          position={ORACLE_3_POSITIONS[selectorTargetIndex]}
-          onSelectCard={handleAssignOracleCard}
-          currentlyAssignedId={oracleCards[selectorTargetIndex]?.card.id}
-        />
-      )}
 
       {/* Botón para Realizar Otra Consulta */}
       <div className="flex justify-center pt-4">
